@@ -18,7 +18,7 @@ bucket = "./dist"
 [limits]
 memory_mb = 128
 max_upload_size = "10MB"
-cpu_ms = 1000
+# cpu_ms = 1000 - Removido porque no es compatible con el plan gratuito
 
 [vars]
 ENVIRONMENT = "production"
