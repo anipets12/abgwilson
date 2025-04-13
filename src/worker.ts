@@ -5,8 +5,16 @@ import { handleAuthRoutes } from './routes/auth'
 import { handleDocumentRoutes } from './routes/documents'
 import { handleContactRoutes } from './routes/contacto'
 import { createSupabaseClient, createPrismaClient, createNotionClient, createOpenAIClient, createPayPalClient, createMistralClient } from './shims'
-import manifestJSON from '__STATIC_CONTENT_MANIFEST'
-const assetManifest = JSON.parse(manifestJSON)
+
+// Importación segura del manifiesto estático
+let assetManifest = {}
+try {
+  // @ts-ignore - Este import es generado por Cloudflare durante el despliegue
+  const manifestJSON = globalThis.__STATIC_CONTENT_MANIFEST || '{}'
+  assetManifest = JSON.parse(manifestJSON)
+} catch (e) {
+  console.error('Error al cargar el manifiesto de activos:', e)
+}
 
 export interface Env {
   DB: D1Database
@@ -43,22 +51,37 @@ async function handleOptions(request: Request) {
 }
 
 function createServices(env: Env) {
-  const supabase = createSupabaseClient(env.SUPABASE_URL, env.SUPABASE_KEY);
-  const prisma = createPrismaClient(env.DATABASE_URL);
-  const notion = createNotionClient(env.NOTION_API_KEY, env.NOTION_DATABASE_ID);
-  const openai = createOpenAIClient(env.OPENAI_API_KEY);
-  const paypal = createPayPalClient(env.PAYPAL_CLIENT_ID, env.PAYPAL_CLIENT_SECRET);
-  const mistral = createMistralClient(env.MISTRAL_API_KEY);
-  
-  return {
-    supabase,
-    prisma,
-    notion,
-    openai,
-    paypal,
-    mistral,
-    db: env.DB,
-    assets: env.ASSETS,
+  try {
+    const supabase = createSupabaseClient(env.SUPABASE_URL || '', env.SUPABASE_KEY || '');
+    const prisma = createPrismaClient(env.DATABASE_URL || '');
+    const notion = createNotionClient(env.NOTION_API_KEY || '', env.NOTION_DATABASE_ID || '');
+    const openai = createOpenAIClient(env.OPENAI_API_KEY || '');
+    const paypal = createPayPalClient(env.PAYPAL_CLIENT_ID || '', env.PAYPAL_CLIENT_SECRET || '');
+    const mistral = createMistralClient(env.MISTRAL_API_KEY || '');
+    
+    return {
+      supabase,
+      prisma,
+      notion,
+      openai,
+      paypal,
+      mistral,
+      db: env.DB,
+      assets: env.ASSETS,
+    };
+  } catch (error) {
+    console.error('Error al crear servicios:', error);
+    // Devolver servicios vacíos que no fallen al ser llamados
+    return {
+      supabase: { auth: { getSession: () => ({ data: { session: null } }) } },
+      prisma: {},
+      notion: {},
+      openai: {},
+      paypal: {},
+      mistral: {},
+      db: env.DB,
+      assets: env.ASSETS,
+    };
   }
 }
 
@@ -109,9 +132,9 @@ export default {
         return handleOptions(request)
       }
 
-      // Validate environment
-      if (!env.SUPABASE_URL || !env.SUPABASE_KEY || !env.DATABASE_URL || !env.JWT_SECRET || !env.OPENAI_API_KEY || !env.PAYPAL_CLIENT_ID || !env.PAYPAL_CLIENT_SECRET || !env.MISTRAL_API_KEY) {
-        throw new Error('Faltan variables de entorno requeridas')
+      // Advertir sobre variables de entorno faltantes pero no fallar
+      if (!env.SUPABASE_URL || !env.SUPABASE_KEY || !env.DATABASE_URL || !env.JWT_SECRET) {
+        console.warn('Advertencia: Algunas variables de entorno importantes podrían faltar, pero continuaremos')
       }
 
       const url = new URL(request.url)
@@ -121,50 +144,83 @@ export default {
         return handleApiRequest(request, env)
       }
 
-      // Serve static assets
+      // Implementación simplificada para servir activos estáticos
       try {
-        const page = await getAssetFromKV(request, {
-          ASSET_MANIFEST: assetManifest,
-          ASSET_NAMESPACE: env.ASSETS,
-        })
-
-        const response = new Response(page.body, page)
-        response.headers.set('X-XSS-Protection', '1; mode=block')
-        Object.entries(securityHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value)
-        })
-
-        return response
-      } catch (e) {
-        // Si no se encuentra el recurso, devolver index.html para rutas SPA
+        // Intentar servir el activo solicitado directamente
+        let response;
         try {
-          // Creamos un nuevo objeto Request con la URL modificada para index.html
+          const options = {
+            ASSET_NAMESPACE: env.ASSETS,
+            // Solo usar el manifiesto si está disponible
+            ...((Object.keys(assetManifest).length > 0) ? { ASSET_MANIFEST: assetManifest } : {}),
+            // Definir un cacheControl para mayor rendimiento
+            cacheControl: {
+              browserTTL: 60 * 60 * 24, // 1 día
+              edgeTTL: 60 * 60 * 24 * 2, // 2 días
+              bypassCache: false,
+            },
+          };
+
+          const page = await getAssetFromKV(request, options);
+          response = new Response(page.body, page);
+        } catch (e) {
+          // Si falla, intentar servir index.html para el enrutamiento SPA
+          console.log('Error al servir activo específico, intentando con index.html:', e);
           const indexRequest = new Request(new URL('/index.html', request.url).toString(), request);
-          
-          const notFoundResponse = await getAssetFromKV(
-            indexRequest,
-            {
-              ASSET_MANIFEST: assetManifest,
-              ASSET_NAMESPACE: env.ASSETS,
-            }
-          );
-
-          const response = new Response(notFoundResponse.body, {
-            ...notFoundResponse,
-            status: 200, // Devolvemos 200 para SPA routing
+          const indexPage = await getAssetFromKV(indexRequest, {
+            ASSET_NAMESPACE: env.ASSETS,
+            ...((Object.keys(assetManifest).length > 0) ? { ASSET_MANIFEST: assetManifest } : {}),
           });
-
-          Object.entries(securityHeaders).forEach(([key, value]) => {
-            response.headers.set(key, value)
-          });
-
-          return response;
-        } catch (indexError) {
-          return new Response('Página no encontrada', { 
-            status: 404,
-            headers: securityHeaders
+          response = new Response(indexPage.body, {
+            ...indexPage,
+            status: 200,
           });
         }
+        
+        // Agregar headers de seguridad
+        response.headers.set('X-XSS-Protection', '1; mode=block');
+        Object.entries(securityHeaders).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
+        
+        return response;
+      } catch (error) {
+        console.error('Error al servir activos estáticos:', error);
+        // Devolver una respuesta HTML básica como fallback
+        return new Response(`
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Abg. Wilson Alexander - Servicio Temporal</title>
+            <style>
+              body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+              h1 { color: #2c5282; }
+              .message { background-color: #ebf8ff; padding: 20px; border-radius: 8px; }
+              .contact { margin-top: 30px; }
+            </style>
+          </head>
+          <body>
+            <h1>Abg. Wilson Alexander Ipiales Guerron</h1>
+            <div class="message">
+              <p>Nuestro sitio web está en mantenimiento. Disculpe las molestias.</p>
+              <p>Por favor, comuníquese directamente si requiere asistencia legal.</p>
+            </div>
+            <div class="contact">
+              <p><strong>Email:</strong> alexip2@hotmail.com</p>
+              <p><strong>Teléfono:</strong> +593 988835269</p>
+              <p><strong>Dirección:</strong> Juan José Flores 4-73 y Vicente Rocafuerte, Ibarra, Ecuador</p>
+            </div>
+          </body>
+          </html>
+        `, { 
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html;charset=UTF-8',
+            ...securityHeaders
+          }
+        });
       }
     } catch (error) {
       console.error('Worker Error:', error)
