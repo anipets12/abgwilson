@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabase';
 import FileUploader from './FileUploader';
-import { useToken } from '../../services/tokenService';
+import { tokenService } from '../../services/tokenService';
 import { toast } from 'react-hot-toast';
 
 const CommentForm = ({ postId }) => {
@@ -19,7 +19,7 @@ const CommentForm = ({ postId }) => {
       
       if (user) {
         // Obtener tokens del usuario
-        const { tokens, error } = await useToken.getUserTokens(user.id);
+        const { tokens, error } = await tokenService.getUserTokens(user.id);
         if (!error) {
           setTokensRemaining(tokens);
         }
@@ -45,7 +45,7 @@ const CommentForm = ({ postId }) => {
       }
 
       // Usar un token para comentar
-      const { tokensRemaining: newTokens, error: tokenError } = await useToken.useToken(user.id);
+      const { tokensRemaining: newTokens, error: tokenError } = await tokenService.useToken(user.id);
       
       if (tokenError) {
         throw new Error(tokenError);

@@ -26,11 +26,8 @@ if ! command -v npm &> /dev/null; then
   exit 1
 fi
 
-# Verificar si está instalado wrangler
-if ! command -v wrangler &> /dev/null; then
-  echo "wrangler no está instalado, intentando instalar..."
-  npm install -g wrangler
-fi
+# Ya no es necesario instalar wrangler globalmente
+# Usaremos npx para ejecutar wrangler localmente
 
 # Instalar dependencias
 echo "Instalando dependencias..."
@@ -40,16 +37,21 @@ echo "✅ Dependencias instaladas correctamente"
 # Compilar TypeScript
 echo "Compilando TypeScript..."
 npm run build
+if [ $? -ne 0 ]; then
+  echo "❌ Error al compilar TypeScript"
+  echo "Por favor, corrija los errores y vuelva a intentarlo"
+  exit 1
+fi
 echo "✅ Código compilado correctamente"
 
 # Desplegar a Cloudflare Workers
 echo "Desplegando a Cloudflare Workers..."
-wrangler deploy
+npx wrangler deploy
 
 # Verificar si el despliegue fue exitoso
 if [ $? -eq 0 ]; then
   echo "✅ Despliegue exitoso a Cloudflare Workers"
-  echo "Para verificar, ejecute: wrangler tail"
+  echo "Para verificar, ejecute: npx wrangler tail"
 else
   echo "❌ Error en el despliegue"
   echo "Por favor, revise los errores y vuelva a intentarlo"

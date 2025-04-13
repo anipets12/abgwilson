@@ -1,143 +1,43 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authService } from '../services/apiService';
-
-// Crear el contexto
-const AuthContext = createContext();
-
-// Hook personalizado para usar el contexto
-export const useAuth = () => useContext(AuthContext);
-
-// Proveedor del contexto
+import React, { createContext, useState, useEffect } from 'react';
+import { supabase } from '../config/supabase';
+import { toast } from 'react-toastify';
+const AuthContext = createContext({});
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [authReady, setAuthReady] = useState(false);
-  const [error, setError] = useState(null);
-
-  // Verificar autenticación al cargar
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Verificar si hay un token en localStorage
-        const token = localStorage.getItem('authToken');
-        
-        if (!token) {
-          setLoading(false);
-          setAuthReady(true);
-          return;
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUser(session?.user ?? null);
+            setLoading(false);
+        });
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+        return () => subscription.unsubscribe();
+    }, []);
+    const login = async (credentials) => {
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword(credentials);
+            if (error)
+                throw error;
+            setUser(data.user);
+            return { success: true };
         }
-        
-        // Verificar si el token es válido obteniendo datos del usuario
-        const { data, error } = await authService.getUser();
-        
-        if (error) {
-          console.error('Error al verificar autenticación:', error);
-          // Si hay error, probablemente el token no es válido
-          localStorage.removeItem('authToken');
-          setUser(null);
-        } else if (data && data.user) {
-          console.log('Usuario autenticado:', data.user);
-          setUser(data.user);
+        catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Error de autenticación');
+            return { success: false, error };
         }
-      } catch (err) {
-        console.error('Error al verificar autenticación:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-        setAuthReady(true);
-      }
     };
-
-    checkAuth();
-  }, []);
-
-  // Función para iniciar sesión
-  const login = async (email, password) => {
-    setLoading(true);
-    try {
-      const { data, error } = await authService.login(email, password);
-      
-      if (error) {
-        throw new Error(error.message || 'Error al iniciar sesión');
-      }
-      
-      setUser(data.user);
-      return { success: true, data };
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Función para registrar un nuevo usuario
-  const register = async (userData) => {
-    setLoading(true);
-    try {
-      const { data, error } = await authService.register(userData);
-      
-      if (error) {
-        throw new Error(error.message || 'Error al registrar usuario');
-      }
-      
-      if (data.user) {
-        setUser(data.user);
-      }
-      
-      return { success: true, data };
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Función para cerrar sesión
-  const logout = async () => {
-    setLoading(true);
-    try {
-      const { error } = await authService.signOut();
-      
-      if (error) {
-        throw new Error(error.message || 'Error al cerrar sesión');
-      }
-      
-      setUser(null);
-      return { success: true };
-    } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Función para actualizar el usuario actual
-  const updateUser = (userData) => {
-    setUser(prevUser => ({
-      ...prevUser,
-      ...userData
-    }));
-  };
-
-  // Valores a proporcionar en el contexto
-  const value = {
-    user,
-    setUser,
-    loading,
-    error,
-    authReady,
-    login,
-    register,
-    logout,
-    updateUser
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+    const logout = async () => {
+        try {
+            await supabase.auth.signOut();
+            setUser(null);
+        }
+        catch (error) {
+            console.error('Error during logout:', error);
+        }
+    };
+    return (<AuthContext.Provider value={{ user, login, logout, loading }}>
+      {!loading && children}
+    </AuthContext.Provider>);
 };

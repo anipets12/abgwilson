@@ -39,8 +39,8 @@ Este proyecto está diseñado para ser implementado en Cloudflare Workers y Page
 
 ### Implementación del frontend (Cloudflare Pages)
 
-1. Clone este repositorio: `git clone https://github.com/tu-usuario/abogado-wilson-website.git`
-2. Navegue al directorio del proyecto: `cd abogado-wilson-website`
+1. Clone este repositorio: `git clone https://github.com/anipets12/abgwilson.git`
+2. Navegue al directorio del proyecto: `cd abgwilson`
 3. Instale las dependencias: `npm install`
 4. Compile el frontend: `npm run build`
 5. Despliegue en Cloudflare Pages: `wrangler pages deploy dist`
@@ -100,4 +100,4 @@ La API REST está disponible en el endpoint `/api`:
 
 ## Licencia
 
-Todos los derechos reservados © 2025 Abg. Wilson Alexander Ipiales Guerron
+Todos los derechos reservados 2025 Abg. Wilson Alexander Ipiales Guerron
