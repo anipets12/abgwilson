@@ -1,37 +1,11 @@
+// Implementación más simple y directa para el Worker
 /// <reference path="./cloudflare.d.ts" />
 import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
-import { WorkerEnv, WorkerRequest, Services } from './types'
-import { handleAuthRoutes } from './routes/auth'
-import { handleDocumentRoutes } from './routes/documents'
-import { handleContactRoutes } from './routes/contacto'
-import { createSupabaseClient, createPrismaClient, createNotionClient, createOpenAIClient, createPayPalClient, createMistralClient } from './shims'
 
-// Importación segura del manifiesto estático
-let assetManifest = {}
-try {
-  // @ts-ignore - Este import es generado por Cloudflare durante el despliegue
-  const manifestJSON = globalThis.__STATIC_CONTENT_MANIFEST || '{}'
-  assetManifest = JSON.parse(manifestJSON)
-} catch (e) {
-  console.error('Error al cargar el manifiesto de activos:', e)
-}
-
+// Definición simplificada de ambiente
 export interface Env {
-  DB: D1Database
   ASSETS: KVNamespace
-  SUPABASE_URL: string
-  SUPABASE_KEY: string
-  DATABASE_URL: string
-  JWT_SECRET: string
-  TURSO_DATABASE_URL: string
-  TURSO_AUTH_TOKEN: string
-  CORS_ORIGIN: string
-  NOTION_API_KEY: string
-  NOTION_DATABASE_ID: string
-  OPENAI_API_KEY: string
-  PAYPAL_CLIENT_ID: string
-  PAYPAL_CLIENT_SECRET: string
-  MISTRAL_API_KEY: string
+  [key: string]: any
 }
 
 const corsHeaders = {
@@ -50,40 +24,7 @@ async function handleOptions(request: Request) {
   });
 }
 
-function createServices(env: Env) {
-  try {
-    const supabase = createSupabaseClient(env.SUPABASE_URL || '', env.SUPABASE_KEY || '');
-    const prisma = createPrismaClient(env.DATABASE_URL || '');
-    const notion = createNotionClient(env.NOTION_API_KEY || '', env.NOTION_DATABASE_ID || '');
-    const openai = createOpenAIClient(env.OPENAI_API_KEY || '');
-    const paypal = createPayPalClient(env.PAYPAL_CLIENT_ID || '', env.PAYPAL_CLIENT_SECRET || '');
-    const mistral = createMistralClient(env.MISTRAL_API_KEY || '');
-    
-    return {
-      supabase,
-      prisma,
-      notion,
-      openai,
-      paypal,
-      mistral,
-      db: env.DB,
-      assets: env.ASSETS,
-    };
-  } catch (error) {
-    console.error('Error al crear servicios:', error);
-    // Devolver servicios vacíos que no fallen al ser llamados
-    return {
-      supabase: { auth: { getSession: () => ({ data: { session: null } }) } },
-      prisma: {},
-      notion: {},
-      openai: {},
-      paypal: {},
-      mistral: {},
-      db: env.DB,
-      assets: env.ASSETS,
-    };
-  }
-}
+// Eliminar la función createServices para simplificar
 
 async function handleApiRequest(request: Request, env: Env): Promise<Response> {
   const services = createServices(env)
