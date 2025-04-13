@@ -47,9 +47,45 @@ export default {
     try {
       // Configuración simple para getAssetFromKV
       const options = {
-        ASSET_NAMESPACE: env.ASSETS
+        ASSET_NAMESPACE: env.ASSETS,
+        // Habilitar caché para mejor rendimiento
+        cacheControl: {
+          browserTTL: 60 * 60 * 24, // 1 día en el navegador
+          edgeTTL: 60 * 60 * 24 * 7, // 7 días en el edge
+          bypassCache: false, // No saltar la caché
+        },
       };
 
+      // Manejo especial para el favicon.ico
+      if (url.pathname === '/favicon.ico') {
+        try {
+          // Intentar servir el favicon directamente desde KV
+          let favicon = await env.ASSETS.get('favicon.ico', 'arrayBuffer');
+          
+          // Si no está en KV, usamos un favicon genérico
+          if (!favicon) {
+            // Favicon genérico de un abogado (1x1 pixel transparente como fallback)
+            favicon = new Uint8Array([0,0,0,0]).buffer;
+          }
+          
+          return new Response(favicon, {
+            headers: {
+              'Content-Type': 'image/x-icon',
+              'Cache-Control': 'public, max-age=86400',
+            },
+          });
+        } catch (e) {
+          console.error('Error al servir favicon:', e);
+          // Si falla, devolvemos una respuesta vacía pero válida
+          return new Response(null, {
+            status: 204, // No Content
+            headers: {
+              'Cache-Control': 'public, max-age=86400',
+            },
+          });
+        }
+      }
+      
       // Para rutas SPA, redirigir todo a index.html
       if (!url.pathname.includes('.') || url.pathname === '/') {
         const indexRequest = new Request(`${url.origin}/index.html`, request);
@@ -80,6 +116,26 @@ export default {
       return response;
     } catch (error) {
       console.error("Error serving asset:", error);
+      
+      // Si es un favicon, devolver una respuesta vacía pero válida
+      if (url.pathname === '/favicon.ico') {
+        return new Response(null, {
+          status: 204, // No Content
+          headers: {
+            'Cache-Control': 'public, max-age=86400',
+          },
+        });
+      }
+      
+      // Si es una imagen u otro recurso estático, devolver una respuesta vacía
+      if (url.pathname.match(/\.(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|eot)$/i)) {
+        return new Response(null, {
+          status: 204, // No Content
+          headers: {
+            'Cache-Control': 'public, max-age=3600',
+          },
+        });
+      }
       
       // Intentar servir index.html para rutas SPA en caso de error
       try {
