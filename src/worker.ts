@@ -144,80 +144,114 @@ export default {
         return handleApiRequest(request, env)
       }
 
-      // Implementación simplificada para servir activos estáticos
+      // Solución directa para servir archivos estáticos
       try {
-        // Intentar servir el activo solicitado directamente
-        let response;
-        try {
-          const options = {
-            ASSET_NAMESPACE: env.ASSETS,
-            // Solo usar el manifiesto si está disponible
-            ...((Object.keys(assetManifest).length > 0) ? { ASSET_MANIFEST: assetManifest } : {}),
-            // Definir un cacheControl para mayor rendimiento
-            cacheControl: {
-              browserTTL: 60 * 60 * 24, // 1 día
-              edgeTTL: 60 * 60 * 24 * 2, // 2 días
-              bypassCache: false,
-            },
-          };
-
-          const page = await getAssetFromKV(request, options);
-          response = new Response(page.body, page);
-        } catch (e) {
-          // Si falla, intentar servir index.html para el enrutamiento SPA
-          console.log('Error al servir activo específico, intentando con index.html:', e);
+        // Si es la ruta raíz o termina en .html, intentamos servir index.html directamente
+        if (url.pathname === '/' || url.pathname.endsWith('.html') || !url.pathname.includes('.')) {
           const indexRequest = new Request(new URL('/index.html', request.url).toString(), request);
-          const indexPage = await getAssetFromKV(indexRequest, {
-            ASSET_NAMESPACE: env.ASSETS,
-            ...((Object.keys(assetManifest).length > 0) ? { ASSET_MANIFEST: assetManifest } : {}),
-          });
-          response = new Response(indexPage.body, {
-            ...indexPage,
-            status: 200,
-          });
+          let indexResponse;
+          
+          try {
+            // Intentar obtener index.html del KV
+            const indexContent = await env.ASSETS.get('index.html');
+            if (indexContent) {
+              indexResponse = new Response(indexContent, {
+                headers: {
+                  'Content-Type': 'text/html;charset=UTF-8',
+                  ...securityHeaders
+                }
+              });
+            } else {
+              throw new Error('index.html no encontrado en KV');
+            }
+          } catch (kvError) {
+            console.log('Error al obtener index.html de KV, usando getAssetFromKV:', kvError);
+            // Fallback a getAssetFromKV
+            const indexPage = await getAssetFromKV(indexRequest, {
+              ASSET_NAMESPACE: env.ASSETS
+            });
+            indexResponse = new Response(indexPage.body, {
+              ...indexPage,
+              headers: {
+                ...indexPage.headers,
+                ...securityHeaders
+              }
+            });
+          }
+          
+          return indexResponse;
         }
         
-        // Agregar headers de seguridad
-        response.headers.set('X-XSS-Protection', '1; mode=block');
-        Object.entries(securityHeaders).forEach(([key, value]) => {
-          response.headers.set(key, value);
+        // Para otros activos estáticos (CSS, JS, imágenes)
+        const assetResponse = await getAssetFromKV(request, {
+          ASSET_NAMESPACE: env.ASSETS
         });
         
-        return response;
+        // Agregar headers de seguridad
+        Object.entries(securityHeaders).forEach(([key, value]) => {
+          assetResponse.headers.set(key, value);
+        });
+        
+        return assetResponse;
       } catch (error) {
         console.error('Error al servir activos estáticos:', error);
-        // Devolver una respuesta HTML básica como fallback
+        
+        // Comprobar si el error es 404 y redirigir a index.html para SPAs
+        if (error.status === 404) {
+          try {
+            const indexRequest = new Request(new URL('/index.html', request.url).toString(), request);
+            const indexPage = await getAssetFromKV(indexRequest, {
+              ASSET_NAMESPACE: env.ASSETS
+            });
+            return new Response(indexPage.body, {
+              ...indexPage,
+              headers: {
+                ...indexPage.headers,
+                ...securityHeaders
+              }
+            });
+          } catch (indexError) {
+            console.error('Error al servir index.html como fallback:', indexError);
+          }
+        }
+        
+        // Si todo falla, devolver una respuesta básica
         return new Response(`
-          <!DOCTYPE html>
-          <html lang="es">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Abg. Wilson Alexander - Servicio Temporal</title>
-            <style>
-              body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
-              h1 { color: #2c5282; }
-              .message { background-color: #ebf8ff; padding: 20px; border-radius: 8px; }
-              .contact { margin-top: 30px; }
-            </style>
-          </head>
-          <body>
-            <h1>Abg. Wilson Alexander Ipiales Guerron</h1>
-            <div class="message">
-              <p>Nuestro sitio web está en mantenimiento. Disculpe las molestias.</p>
-              <p>Por favor, comuníquese directamente si requiere asistencia legal.</p>
-            </div>
-            <div class="contact">
-              <p><strong>Email:</strong> alexip2@hotmail.com</p>
-              <p><strong>Teléfono:</strong> +593 988835269</p>
-              <p><strong>Dirección:</strong> Juan José Flores 4-73 y Vicente Rocafuerte, Ibarra, Ecuador</p>
-            </div>
-          </body>
-          </html>
-        `, { 
-          status: 200,
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abg. Wilson Alexander - Sitio en mantenimiento</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; color: #333; }
+    h1 { color: #2c5282; margin-bottom: 30px; }
+    .message { background-color: #ebf8ff; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+    .contact { margin-top: 30px; background-color: #f7fafc; padding: 20px; border-radius: 8px; }
+    .contact p { margin: 10px 0; }
+    .error-info { font-size: 0.8em; color: #777; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <h1>Abg. Wilson Alexander Ipiales Guerron</h1>
+  <div class="message">
+    <p><strong>Nuestro sitio web está en mantenimiento.</strong> Disculpe las molestias.</p>
+    <p>Por favor, comuníquese directamente si requiere asistencia legal inmediata.</p>
+  </div>
+  <div class="contact">
+    <p><strong>Email:</strong> alexip2@hotmail.com</p>
+    <p><strong>Teléfono:</strong> +593 988835269</p>
+    <p><strong>Dirección:</strong> Juan José Flores 4-73 y Vicente Rocafuerte, Ibarra, Ecuador</p>
+  </div>
+  <div class="error-info">
+    <p>Información técnica: Estamos actualizando nuestros sistemas para mejorar su experiencia. El sitio estará disponible pronto.</p>
+  </div>
+</body>
+</html>`, {
+          status: 503, // Service Unavailable
           headers: {
             'Content-Type': 'text/html;charset=UTF-8',
+            'Retry-After': '3600',
             ...securityHeaders
           }
         });

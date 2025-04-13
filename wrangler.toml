@@ -12,8 +12,12 @@ local_protocol = "http"
 command = "npm run build"
 watch_dir = "src"
 
+# Configuración de sitio simplificada
 [site]
 bucket = "./dist"
+include = ["**/*"]
+exclude = [".git*", "node_modules/**", "src/**"]
+
 
 # Límites eliminados para compatibilidad con plan gratuito
 
