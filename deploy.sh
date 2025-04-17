@@ -22,27 +22,23 @@ check_error() {
   fi
 }
 
-# Función para verificar si un paquete está instalado
-check_package() {
-  if ! npm list -g $1 >/dev/null 2>&1; then
-    echo -e "${YELLOW}[AVISO]${NC} Instalando $1 globalmente..."
-    npm install -g $1
-    check_error "No se pudo instalar $1" "$1 instalado correctamente"
-  else
-    echo -e "${GREEN}[OK]${NC} $1 ya está instalado"
-  fi
-}
+# Verificar wrangler sin instalación global
+echo -e "${BLUE}[INFO]${NC} Verificando acceso a Wrangler via npx..."
+npx wrangler --version >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo -e "${YELLOW}[AVISO]${NC} Instalando Wrangler localmente en el proyecto..."
+  npm install --save-dev wrangler
+  check_error "No se pudo instalar Wrangler localmente" "Wrangler instalado correctamente"
+else
+  echo -e "${GREEN}[OK]${NC} Wrangler accesible via npx"
+fi
 
-# 1. Verificar y instalar Wrangler
-echo -e "${BLUE}[INFO]${NC} Verificando instalación de Wrangler..."
-check_package wrangler
-
-# 2. Limpiar caché y directorios temporales
+# Limpiar caché y directorios temporales
 echo -e "${BLUE}[INFO]${NC} Limpiando directorios temporales y caché..."
 rm -rf dist .wrangler .cache node_modules/.cache
 check_error "Error al limpiar caché" "Caché limpiada correctamente"
 
-# 3. Verificar node_modules
+# Verificar node_modules
 echo -e "${BLUE}[INFO]${NC} Verificando node_modules..."
 if [ ! -d "node_modules" ] || [ ! -d "node_modules/@cloudflare" ]; then
   echo -e "${YELLOW}[AVISO]${NC} Instalando dependencias..."
@@ -52,7 +48,7 @@ else
   echo -e "${GREEN}[OK]${NC} node_modules parece correcto"
 fi
 
-# 4. Asegurar que cloudflare/kv-asset-handler esté instalado
+# Asegurar que cloudflare/kv-asset-handler esté instalado
 echo -e "${BLUE}[INFO]${NC} Verificando dependencia crítica @cloudflare/kv-asset-handler..."
 if ! grep -q "\"@cloudflare/kv-asset-handler\"" package.json; then
   echo -e "${YELLOW}[AVISO]${NC} Instalando @cloudflare/kv-asset-handler..."
@@ -62,12 +58,12 @@ else
   echo -e "${GREEN}[OK]${NC} @cloudflare/kv-asset-handler ya está en package.json"
 fi
 
-# 5. Compilar el proyecto
+# Compilar el proyecto
 echo -e "${BLUE}[INFO]${NC} Compilando el proyecto..."
 npm run build
 check_error "Error en la compilación" "Proyecto compilado correctamente"
 
-# 6. Verificar archivos críticos
+# Verificar archivos críticos
 echo -e "${BLUE}[INFO]${NC} Verificando archivos compilados..."
 if [ ! -f "dist/index.html" ]; then
   echo -e "${RED}[ERROR]${NC} No se encontró el archivo index.html"
@@ -82,14 +78,14 @@ fi
 JS_COUNT=$(find dist -name "*.js" | wc -l)
 echo -e "${GREEN}[OK]${NC} Encontrados $JS_COUNT archivos JavaScript"
 
-# 7. Verificar worker-index.js
+# Verificar worker-index.js
 echo -e "${BLUE}[INFO]${NC} Verificando worker-index.js..."
 if [ ! -f "src/worker-index.js" ]; then
   echo -e "${RED}[ERROR]${NC} No se encontró el worker-index.js"
   exit 1
 fi
 
-# 8. Generar definiciones de tipo si es necesario
+# Generar definiciones de tipo si es necesario
 echo -e "${BLUE}[INFO]${NC} Generando definiciones de tipo si es necesario..."
 if [ ! -f "src/cloudflare.d.ts" ]; then
   echo -e "${YELLOW}[AVISO]${NC} Creando cloudflare.d.ts..."
@@ -118,12 +114,12 @@ EOF
   check_error "Error al crear cloudflare.d.ts" "cloudflare.d.ts creado correctamente"
 fi
 
-# 9. Desplegar con Wrangler
+# Desplegar con Wrangler
 echo -e "${BLUE}[INFO]${NC} Desplegando con Wrangler (carga completa)..."
 npx wrangler deploy
 check_error "Error en el despliegue" "Sitio desplegado correctamente"
 
-# 10. Verificar despliegue 
+# Verificar despliegue 
 echo -e "${BLUE}[INFO]${NC} Verificando despliegue..."
 WORKER_URL="https://abogado-wilson-website.anipets12.workers.dev"
 echo -e "${YELLOW}[AVISO]${NC} Esperando 10 segundos para que el despliegue se propague..."
