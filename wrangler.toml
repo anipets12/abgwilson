@@ -1,11 +1,10 @@
 name = "abogado-wilson-website"
+main = "src/worker-simple.ts"
 compatibility_date = "2023-11-21"
-type = "javascript"
 workers_dev = true
 
 [site]
 bucket = "./dist"
-entry-point = "src/worker-simple.ts"
 
 [build]
 command = "npm run build"
@@ -13,16 +12,6 @@ watch_dir = "src"
 
 [build.upload]
 format = "service-worker"
-
-# Configuración para servir correctamente SPA
-[route]
-pattern = "*/*"
-zone_name = "abogado-wilson-website.anipets12.workers.dev"
-
-# Configuración avanzada
-[env.production]
-route = ""
-zone_id = ""
 
 [miniflare]
 kv_persist = true

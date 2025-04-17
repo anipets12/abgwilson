@@ -19,7 +19,7 @@ export default {
       "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS"
     };
 
-    // Manejo de CORS y preflight OPTIONS
+    // Manejar OPTIONS para CORS
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
@@ -32,35 +32,25 @@ export default {
 
     const url = new URL(request.url);
     
-    // Manejo de API
-    if (url.pathname.startsWith('/api')) {
-      return new Response(JSON.stringify({ status: 'ok' }), {
-        headers: {
-          'Content-Type': 'application/json',
-          ...securityHeaders
-        }
-      });
-    }
-
-    // Identificar si esta es una solicitud de archivo estático
-    const fileExtensionRegex = /\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/;
-    const isAssetRequest = fileExtensionRegex.test(url.pathname);
-
     try {
-      let response;
+      // Determinar si esta es una solicitud de archivo estático con extensión
+      const isAssetRequest = url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/);
 
       if (isAssetRequest) {
-        // Para archivos estáticos, intentar servirlos directamente
+        // Para archivos estáticos, servir directamente
         const asset = await getAssetFromKV(request, {
           ASSET_NAMESPACE: env.ASSETS,
           cacheControl: {
-            browserTTL: 60 * 60 * 24 * 30, // 30 días para recursos estáticos
-            edgeTTL: 60 * 60 * 24 * 30,
-            bypassCache: false
+            browserTTL: 60 * 60 * 24 * 30, // 30 días
+            edgeTTL: 60 * 60 * 24 * 30
           }
         });
-
-        response = new Response(asset.body, {
+        
+        if (!asset) {
+          throw new Error(`Asset not found: ${url.pathname}`);
+        }
+        
+        return new Response(asset.body, {
           status: 200,
           headers: {
             ...asset.headers,
@@ -69,45 +59,32 @@ export default {
           }
         });
       } else {
-        // Para todas las rutas SPA, servir index.html
+        // Para todas las otras rutas (SPA), servir index.html
         const indexRequest = new Request(`${url.origin}/index.html`, request);
         const indexAsset = await getAssetFromKV(indexRequest, {
           ASSET_NAMESPACE: env.ASSETS,
           cacheControl: {
-            browserTTL: 0, // No cachear el index.html
+            browserTTL: 0, // No cachear index.html
             edgeTTL: 0,
-            bypassCache: true
+            bypassCache: true // Siempre obtener la versión más reciente
           }
         });
-
-        response = new Response(indexAsset.body, {
+        
+        return new Response(indexAsset.body, {
           status: 200,
           headers: {
             ...indexAsset.headers,
             ...securityHeaders,
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
           }
         });
       }
-
-      return response;
     } catch (error) {
       console.error('Error al servir contenido:', error);
-
-      // Para archivos estáticos no encontrados
-      if (isAssetRequest) {
-        return new Response(`Recurso no encontrado: ${url.pathname}`, {
-          status: 404,
-          headers: {
-            'Content-Type': 'text/plain',
-            ...securityHeaders
-          }
-        });
-      }
-
-      // Si hay error al cargar index.html, mostrar página básica
+      
+      // Página de error simple y útil en caso de fallo
       return new Response(`
 <!DOCTYPE html>
 <html lang="es">
@@ -134,12 +111,12 @@ export default {
   </div>
   <p><strong>Teléfono:</strong> +593 988835269</p>
   <p><strong>Dirección:</strong> Juan José Flores 4-73 y Vicente Rocafuerte, Ibarra, Ecuador</p>
-  <p class="error-message">Estamos experimentando problemas técnicos. Por favor, inténtelo de nuevo más tarde.</p>
+  <p class="error-message">El sitio estará disponible en breve. Por favor, intente nuevamente en unos momentos.</p>
 </body>
 </html>`, {
-        status: 200, // Usar 200 en lugar de 500 para que la página de error sea amigable
+        status: 200,
         headers: {
-          "Content-Type": "text/html;charset=UTF-8",
+          'Content-Type': 'text/html;charset=UTF-8',
           ...securityHeaders
         }
       });
