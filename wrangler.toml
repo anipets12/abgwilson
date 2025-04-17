@@ -6,16 +6,6 @@ workers_dev = true
 [site]
 bucket = "./dist"
 
-[build]
-command = "npm run build"
-watch_dir = "src"
-
-[build.upload]
-format = "service-worker"
-
-[miniflare]
-kv_persist = true
-
 [dev]
 port = 3000
 local_protocol = "http"
