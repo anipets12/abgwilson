@@ -15,13 +15,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    },
+    minify: 'esbuild', // Cambiado de 'terser' a 'esbuild' para evitar dependencia opcional
     rollupOptions: {
       output: {
         manualChunks: {
