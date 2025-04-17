@@ -1,25 +1,35 @@
 name = "abogado-wilson-website"
-main = "src/worker-simple.ts"
-compatibility_date = "2024-02-14"
-account_id = "f21b24d86935a055c03d21f7fffd1514"
+compatibility_date = "2023-11-21"
+type = "javascript"
 workers_dev = true
 
-[dev]
-port = 3000
-local_protocol = "http"
+[site]
+bucket = "./dist"
+entry-point = "src/worker-simple.ts"
 
 [build]
 command = "npm run build"
 watch_dir = "src"
 
-# Configuración de sitio simplificada
-[site]
-bucket = "./dist"
-include = ["**/*"]
-exclude = [".git*", "node_modules/**", "src/**"]
+[build.upload]
+format = "service-worker"
 
+# Configuración para servir correctamente SPA
+[route]
+pattern = "*/*"
+zone_name = "abogado-wilson-website.anipets12.workers.dev"
 
-# Límites eliminados para compatibilidad con plan gratuito
+# Configuración avanzada
+[env.production]
+route = ""
+zone_id = ""
+
+[miniflare]
+kv_persist = true
+
+[dev]
+port = 3000
+local_protocol = "http"
 
 [vars]
 ENVIRONMENT = "production"

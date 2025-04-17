@@ -1,15 +1,15 @@
 /// <reference path="./cloudflare.d.ts" />
-import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
+import { getAssetFromKV } from '@cloudflare/kv-asset-handler';
 
 // Definición simplificada de ambiente
 export interface Env {
-  ASSETS: KVNamespace
-  [key: string]: any
+  ASSETS: KVNamespace;
+  [key: string]: any;
 }
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    // Headers de seguridad optimizados para aplicación React SPA
+    // Headers de seguridad
     const securityHeaders = {
       "Content-Security-Policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' data: https: blob:; connect-src 'self' https: wss: blob:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:;",
       "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
@@ -19,7 +19,7 @@ export default {
       "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS"
     };
 
-    // Manejar preflight OPTIONS
+    // Manejo de CORS y preflight OPTIONS
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
@@ -30,10 +30,9 @@ export default {
       });
     }
 
-    // Obtener URL
     const url = new URL(request.url);
     
-    // Handle API routes if needed
+    // Manejo de API
     if (url.pathname.startsWith('/api')) {
       return new Response(JSON.stringify({ status: 'ok' }), {
         headers: {
@@ -43,154 +42,73 @@ export default {
       });
     }
 
-    try {
-      // Configuración para getAssetFromKV
-      const options = {
-        ASSET_NAMESPACE: env.ASSETS,
-        // Estrategia de caché optimizada
-        cacheControl: {
-          browserTTL: 60 * 60 * 24, // 1 día en el navegador
-          edgeTTL: 60 * 60 * 24 * 7, // 7 días en el edge
-          bypassCache: false, // No saltar la caché
-        }
-      };
+    // Identificar si esta es una solicitud de archivo estático
+    const fileExtensionRegex = /\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/;
+    const isAssetRequest = fileExtensionRegex.test(url.pathname);
 
-      // Manejo especial para el favicon.ico
-      if (url.pathname === '/favicon.ico') {
-        try {
-          // Intentar servir el favicon directamente desde KV
-          let favicon = await env.ASSETS.get('favicon.ico', 'arrayBuffer');
-          
-          // Si no está en KV, buscar en otros formatos
-          if (!favicon) {
-            try {
-              favicon = await env.ASSETS.get('favicon.svg', 'arrayBuffer');
-            } catch (e) {}
-            
-            if (!favicon) {
-              try {
-                favicon = await env.ASSETS.get('favicon.png', 'arrayBuffer');
-              } catch (e) {}
-            }
-            
-            if (!favicon) {
-              try {
-                favicon = await env.ASSETS.get('logo.svg', 'arrayBuffer');
-              } catch (e) {}
-            }
+    try {
+      let response;
+
+      if (isAssetRequest) {
+        // Para archivos estáticos, intentar servirlos directamente
+        const asset = await getAssetFromKV(request, {
+          ASSET_NAMESPACE: env.ASSETS,
+          cacheControl: {
+            browserTTL: 60 * 60 * 24 * 30, // 30 días para recursos estáticos
+            edgeTTL: 60 * 60 * 24 * 30,
+            bypassCache: false
           }
-          
-          // Si todavía no se encuentra, usar un favicon genérico
-          if (!favicon) {
-            favicon = new Uint8Array([0,0,0,0]).buffer;
-          }
-          
-          const contentType = url.pathname.endsWith('.svg') 
-            ? 'image/svg+xml' 
-            : 'image/x-icon';
-            
-          return new Response(favicon, {
-            headers: {
-              'Content-Type': contentType,
-              'Cache-Control': 'public, max-age=86400',
-            },
-          });
-        } catch (e) {
-          console.error('Error al servir favicon:', e);
-          // Si falla, devolvemos una respuesta vacía pero válida
-          return new Response(null, {
-            status: 204, // No Content
-            headers: {
-              'Cache-Control': 'public, max-age=86400',
-            },
-          });
-        }
-      }
-      
-      // Para rutas SPA, servir index.html
-      if (!url.pathname.includes('.') || url.pathname === '/') {
-        try {
-          const indexRequest = new Request(`${url.origin}/index.html`, request);
-          const indexAsset = await getAssetFromKV(indexRequest, { ASSET_NAMESPACE: env.ASSETS });
-          
-          return new Response(indexAsset.body, {
-            status: 200,
-            headers: {
-              ...indexAsset.headers,
-              ...securityHeaders,
-              'Cache-Control': 'no-cache, no-store, must-revalidate' // No cachear index.html
-            }
-          });
-        } catch (e) {
-          console.error("Error al servir index.html para SPA:", e);
-          throw e; // Re-lanzar para manejarlo en el catch global
-        }
-      }
-      
-      // Para otros recursos estáticos
-      try {
-        const asset = await getAssetFromKV(request, options);
-        
-        // Ajustar headers y crear respuesta
-        const response = new Response(asset.body, {
+        });
+
+        response = new Response(asset.body, {
           status: 200,
           headers: {
             ...asset.headers,
-            ...securityHeaders
+            ...securityHeaders,
+            'Cache-Control': 'public, max-age=2592000, immutable' // 30 días
+          }
+        });
+      } else {
+        // Para todas las rutas SPA, servir index.html
+        const indexRequest = new Request(`${url.origin}/index.html`, request);
+        const indexAsset = await getAssetFromKV(indexRequest, {
+          ASSET_NAMESPACE: env.ASSETS,
+          cacheControl: {
+            browserTTL: 0, // No cachear el index.html
+            edgeTTL: 0,
+            bypassCache: true
           }
         });
 
-        // Ajustar Cache-Control para diferentes tipos de contenido
-        const contentType = response.headers.get('content-type') || '';
-        
-        if (contentType.includes('application/javascript') || 
-            contentType.includes('text/css')) {
-          // Recursos críticos: JS y CSS con hashes para versiones
-          response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-        } else if (contentType.includes('image/') || 
-                  contentType.includes('font/') ||
-                  url.pathname.match(/\.(woff|woff2|ttf|eot)$/i)) {
-          // Recursos estáticos: imágenes y fuentes
-          response.headers.set('Cache-Control', 'public, max-age=604800'); // 7 días
-        }
-
-        return response;
-      } catch (e) {
-        console.error("Error al servir recurso estático:", e);
-        throw e; // Re-lanzar para manejarlo en el catch global
-      }
-    } catch (error) {
-      console.error("Error general:", error);
-      
-      // Si es un recurso estático que no se pudo encontrar, responder con 404 pero sin página de error
-      if (url.pathname.match(/\.(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|eot|js|css)$/i)) {
-        return new Response(null, {
-          status: 404, // Not Found
-          headers: {
-            'Cache-Control': 'no-cache',
-            ...securityHeaders
-          },
-        });
-      }
-      
-      // Para cualquier otra ruta, servir index.html (comportamiento SPA)
-      try {
-        const indexRequest = new Request(`${url.origin}/index.html`, request);
-        const indexAsset = await getAssetFromKV(indexRequest, { ASSET_NAMESPACE: env.ASSETS });
-        
-        return new Response(indexAsset.body, {
+        response = new Response(indexAsset.body, {
           status: 200,
           headers: {
             ...indexAsset.headers,
             ...securityHeaders,
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           }
         });
-      } catch (e) {
-        // Error crítico: no se pudo servir index.html
-        console.error("Error crítico, no se pudo servir index.html:", e);
-        
-        return new Response(`
+      }
+
+      return response;
+    } catch (error) {
+      console.error('Error al servir contenido:', error);
+
+      // Para archivos estáticos no encontrados
+      if (isAssetRequest) {
+        return new Response(`Recurso no encontrado: ${url.pathname}`, {
+          status: 404,
+          headers: {
+            'Content-Type': 'text/plain',
+            ...securityHeaders
+          }
+        });
+      }
+
+      // Si hay error al cargar index.html, mostrar página básica
+      return new Response(`
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -198,11 +116,13 @@ export default {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Abg. Wilson Alexander Ipiales Guerron</title>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; color: #333; }
     h1 { color: #2c5282; margin-bottom: 20px; }
     p { margin-bottom: 10px; }
-    .card { background-color: #f0f4f8; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-    .btn { display: inline-block; background-color: #3182ce; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; }
+    .card { background-color: #f0f4f8; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .btn { display: inline-block; background-color: #3182ce; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; transition: background-color 0.3s; }
+    .btn:hover { background-color: #2c5282; }
+    .error-message { color: #e53e3e; margin-top: 20px; background: #fff5f5; padding: 10px; border-radius: 4px; }
   </style>
 </head>
 <body>
@@ -214,15 +134,15 @@ export default {
   </div>
   <p><strong>Teléfono:</strong> +593 988835269</p>
   <p><strong>Dirección:</strong> Juan José Flores 4-73 y Vicente Rocafuerte, Ibarra, Ecuador</p>
+  <p class="error-message">Estamos experimentando problemas técnicos. Por favor, inténtelo de nuevo más tarde.</p>
 </body>
 </html>`, {
-          status: 200,
-          headers: {
-            "Content-Type": "text/html;charset=UTF-8",
-            ...securityHeaders
-          }
-        });
-      }
+        status: 200, // Usar 200 en lugar de 500 para que la página de error sea amigable
+        headers: {
+          "Content-Type": "text/html;charset=UTF-8",
+          ...securityHeaders
+        }
+      });
     }
   }
 };
