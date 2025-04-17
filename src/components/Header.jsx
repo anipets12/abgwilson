@@ -1,19 +1,19 @@
-import { Fragment } from 'react';
-import { Link } from 'react-router-dom';
+import { Fragment, useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { FaWhatsapp, FaPhone, FaUser, FaCalendarAlt, FaNewspaper, FaGavel, FaHome, FaEnvelope, FaBook } from 'react-icons/fa';
-import Navigation from './Navigation/Navigation';
+import { FaWhatsapp, FaPhone, FaUser, FaCalendarAlt, FaNewspaper, FaGavel, FaHome, FaEnvelope, FaBook, FaUserShield } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 
 const navigation = [
-  { name: 'Inicio', href: '/', current: true, icon: <FaHome className="mr-1" /> },
-  { name: 'Servicios', href: '/servicios', current: false, icon: <FaGavel className="mr-1" /> },
-  { name: 'Consultas', href: '/consultas', current: false, icon: <FaUser className="mr-1" /> },
-  { name: 'Blog', href: '/blog', current: false, icon: <FaNewspaper className="mr-1" /> },
-  { name: 'Noticias', href: '/noticias', current: false, icon: <FaBook className="mr-1" /> },
-  { name: 'E-Books', href: '/ebooks', current: false, icon: <FaBook className="mr-1" /> },
-  { name: 'Contacto', href: '/contacto', current: false, icon: <FaEnvelope className="mr-1" /> },
-  { name: 'Calendario', href: '/calendario', current: false, icon: <FaCalendarAlt className="mr-1" /> },
+  { name: 'Inicio', href: '/', icon: <FaHome className="mr-1" /> },
+  { name: 'Servicios', href: '/servicios', icon: <FaGavel className="mr-1" /> },
+  { name: 'Consultas', href: '/consultas', icon: <FaUser className="mr-1" /> },
+  { name: 'Blog', href: '/blog', icon: <FaNewspaper className="mr-1" /> },
+  { name: 'Noticias', href: '/noticias', icon: <FaBook className="mr-1" /> },
+  { name: 'E-Books', href: '/ebooks', icon: <FaBook className="mr-1" /> },
+  { name: 'Contacto', href: '/contacto', icon: <FaEnvelope className="mr-1" /> },
+  { name: 'Calendario', href: '/calendario', icon: <FaCalendarAlt className="mr-1" /> },
 ];
 
 function classNames(...classes) {
@@ -21,15 +21,34 @@ function classNames(...classes) {
 }
 
 export default function Header() {
+  const location = useLocation();
+  const [scrolled, setScrolled] = useState(false);
+
+  // Detectar scroll para cambiar estilo del header
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      if (isScrolled !== scrolled) {
+        setScrolled(isScrolled);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [scrolled]);
+
   return (
-    <Disclosure as="nav" className="bg-white shadow-lg">
+    <Disclosure as="nav" className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-sm shadow-lg' : 'bg-white shadow-md'}`}>
       {({ open }) => (
         <>
           <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-            <div className="relative flex h-16 items-center justify-between">
+            <div className="relative flex h-20 items-center justify-between">
               <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
                 {/* Mobile menu button*/}
-                <Disclosure.Button className="relative inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                <Disclosure.Button className="relative inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all duration-200">
                   <span className="absolute -inset-0.5" />
                   <span className="sr-only">Abrir menú principal</span>
                   {open ? (
@@ -40,78 +59,108 @@ export default function Header() {
                 </Disclosure.Button>
               </div>
               <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
-                <div className="flex flex-shrink-0 items-center">
-                  <img
-                    className="h-8 w-auto"
-                    src="/abogado.png"
-                    alt="Abg. Wilson Ipiales"
-                  />
-                  <span className="ml-2 text-lg font-bold text-blue-800">Abg. Wilson Ipiales</span>
-                </div>
+                <motion.div 
+                  className="flex flex-shrink-0 items-center"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Link to="/">
+                    <img
+                      className="h-10 w-auto transition-all duration-300 hover:scale-105"
+                      src="/abogado.png"
+                      alt="Abg. Wilson Ipiales"
+                    />
+                  </Link>
+                  <Link to="/" className="ml-2 text-lg font-bold text-blue-800 hover:text-blue-600 transition-colors duration-200">
+                    Abg. Wilson Ipiales
+                  </Link>
+                </motion.div>
                 <div className="hidden sm:ml-6 sm:block">
-                  <div className="flex space-x-4">
-                    {navigation.map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        className={classNames(
-                          item.current ? 'bg-blue-700 text-white' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700',
-                          'rounded-md px-3 py-2 text-sm font-medium flex items-center'
-                        )}
-                        aria-current={item.current ? 'page' : undefined}
-                      >
-                        {item.icon}
-                        {item.name}
-                      </Link>
-                    ))}
+                  <div className="flex space-x-2">
+                    {navigation.map((item, index) => {
+                      const isActive = location.pathname === item.href;
+                      return (
+                        <motion.div
+                          key={item.name}
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                        >
+                          <Link
+                            to={item.href}
+                            className={classNames(
+                              isActive 
+                                ? 'bg-blue-700 text-white shadow-md' 
+                                : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700',
+                              'rounded-md px-3 py-2 text-sm font-medium flex items-center transition-all duration-200'
+                            )}
+                            aria-current={isActive ? 'page' : undefined}
+                          >
+                            {item.icon}
+                            {item.name}
+                          </Link>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                 <div className="flex items-center space-x-2">
-                  <a
+                  <motion.a
                     href="https://wa.me/593988835269?text=Hola%20Abg.%20Wilson,%20me%20gustaría%20consultar%20sobre%20sus%20servicios%20legales."
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-green-600 text-white hover:bg-green-700 rounded-md px-3 py-2 text-sm font-medium flex items-center"
+                    className="bg-green-600 text-white hover:bg-green-700 rounded-md px-3 py-2 text-sm font-medium flex items-center transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <FaWhatsapp className="mr-1" />
                     WhatsApp
-                  </a>
-                  <a
+                  </motion.a>
+                  <motion.a
                     href="tel:+593988835269"
-                    className="bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md px-3 py-2 text-sm font-medium flex items-center"
+                    className="bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md px-3 py-2 text-sm font-medium flex items-center transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <FaPhone className="mr-1" />
                     Llamar
-                  </a>
-                  <Link
-                    to="/contacto"
-                    className="bg-blue-600 text-white hover:bg-blue-700 rounded-md px-3 py-2 text-sm font-medium"
+                  </motion.a>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    Consulta Gratis
-                  </Link>
+                    <Link
+                      to="/contacto"
+                      className="bg-blue-600 text-white hover:bg-blue-700 rounded-md px-3 py-2 text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      Consulta Gratis
+                    </Link>
+                  </motion.div>
                 </div>
 
                 {/* Perfil */}
                 <Menu as="div" className="relative ml-3">
                   <div>
-                    <Menu.Button className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <Menu.Button className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:shadow-md transition-all duration-200">
                       <span className="absolute -inset-1.5" />
                       <span className="sr-only">Abrir menú de usuario</span>
-                      <img
-                        className="h-8 w-8 rounded-full"
+                      <motion.img
+                        className="h-9 w-9 rounded-full border-2 border-blue-200 p-0.5"
                         src="/usuario.svg"
                         alt="Usuario"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
                       />
                     </Menu.Button>
                   </div>
                   <Transition
                     as={Fragment}
-                    enter="transition ease-out duration-100"
+                    enter="transition ease-out duration-200"
                     enterFrom="transform opacity-0 scale-95"
                     enterTo="transform opacity-100 scale-100"
-                    leave="transition ease-in duration-75"
+                    leave="transition ease-in duration-150"
                     leaveFrom="transform opacity-100 scale-100"
                     leaveTo="transform opacity-0 scale-95"
                   >
@@ -120,9 +169,12 @@ export default function Header() {
                         {({ active }) => (
                           <Link
                             to="/dashboard"
-                            className={classNames(active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700')}
+                            className={classNames(
+                              active ? 'bg-blue-50 text-blue-700' : '', 
+                              'block px-4 py-2 text-sm text-gray-700 transition-colors duration-150 flex items-center'
+                            )}
                           >
-                            Mi Dashboard
+                            <FaUser className="mr-2" /> Mi Dashboard
                           </Link>
                         )}
                       </Menu.Item>
@@ -130,9 +182,25 @@ export default function Header() {
                         {({ active }) => (
                           <Link
                             to="/calendario"
-                            className={classNames(active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700')}
+                            className={classNames(
+                              active ? 'bg-blue-50 text-blue-700' : '', 
+                              'block px-4 py-2 text-sm text-gray-700 transition-colors duration-150 flex items-center'
+                            )}
                           >
-                            Agendar Cita
+                            <FaCalendarAlt className="mr-2" /> Agendar Cita
+                          </Link>
+                        )}
+                      </Menu.Item>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            to="/configuracion"
+                            className={classNames(
+                              active ? 'bg-blue-50 text-blue-700' : '', 
+                              'block px-4 py-2 text-sm text-gray-700 transition-colors duration-150 flex items-center'
+                            )}
+                          >
+                            <FaUserShield className="mr-2" /> Privacidad y Seguridad
                           </Link>
                         )}
                       </Menu.Item>
@@ -145,20 +213,25 @@ export default function Header() {
 
           <Disclosure.Panel className="sm:hidden">
             <div className="space-y-1 px-2 pb-3 pt-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={classNames(
-                    item.current ? 'bg-blue-700 text-white' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700',
-                    'block rounded-md px-3 py-2 text-base font-medium flex items-center'
-                  )}
-                  aria-current={item.current ? 'page' : undefined}
-                >
-                  {item.icon}
-                  {item.name}
-                </Link>
-              ))}
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={classNames(
+                      isActive 
+                        ? 'bg-blue-700 text-white' 
+                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700',
+                      'block rounded-md px-3 py-2 text-base font-medium flex items-center transition-all duration-200'
+                    )}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {item.icon}
+                    {item.name}
+                  </Link>
+                );
+              })}
             </div>
           </Disclosure.Panel>
         </>
