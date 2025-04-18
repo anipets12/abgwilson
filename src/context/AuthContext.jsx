@@ -1,11 +1,13 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { supabase } from '../config/supabase';
+// Importar el mock local en lugar de @supabase/supabase-js para evitar errores de carga
+import { createClient } from '../mock/supabase';
 import { toast } from 'react-toastify';
 const AuthContext = createContext({});
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
+        const supabase = createClient();
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user ?? null);
             setLoading(false);

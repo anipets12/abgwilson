@@ -3,107 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- Metadatos SEO optimizados -->
   <title>Abg. Wilson Alexander Ipiales Guerron - Asesoría Legal Profesional</title>
-  <meta name="description" content="Asesoría legal profesional en derecho penal, civil, tránsito, comercial y aduanas. Protegiendo sus derechos con experiencia y dedicación en Ibarra, Ecuador.">
-  <meta name="keywords" content="abogado, derecho penal, derecho civil, derecho de tránsito, derecho comercial, aduanas, asesoría legal, Ibarra, Ecuador">
-  <meta name="author" content="Abg. Wilson Alexander Ipiales Guerron">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="Servicios legales profesionales en Ibarra, Ecuador. Asesoría en derecho civil, penal, laboral y administrativo.">
   
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://abogadowilson.com/">
-  <meta property="og:title" content="Abg. Wilson Alexander Ipiales Guerron - Asesoría Legal Profesional">
-  <meta property="og:description" content="Asesoría legal profesional en derecho penal, civil, tránsito, comercial y aduanas. Protegiendo sus derechos con experiencia y dedicación.">
-  <meta property="og:image" content="/images/og-image.jpg">
-
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://abogadowilson.com/">
-  <meta property="twitter:title" content="Abg. Wilson Alexander Ipiales Guerron - Asesoría Legal Profesional">
-  <meta property="twitter:description" content="Asesoría legal profesional en derecho penal, civil, tránsito, comercial y aduanas. Protegiendo sus derechos con experiencia y dedicación.">
-  <meta property="twitter:image" content="/images/og-image.jpg">
+  <!-- Favicon embebido para evitar errores -->
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzNCODJGNiIvPjxwYXRoIGQ9Ik04IDhIMjRWMTJIOFY4WiIgZmlsbD0id2hpdGUiLz48cGF0aCBkPSJNOCAxNEgyMFYxOEg4VjE0WiIgZmlsbD0id2hpdGUiLz48cGF0aCBkPSJNOCAyMEgxNlYyNEg4VjIwWiIgZmlsbD0id2hpdGUiLz48L3N2Zz4=">
   
-  <!-- Fonts -->
+  <!-- Preconexión a Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  
-  <!-- Correcciones para problemas de carga -->
-  <script type="text/javascript">
-    // Capturar y manejar errores de carga
-    window.addEventListener('error', function(e) {
-      console.error('Error capturado:', e.message);
-      
-      // Reintentar cargar recursos críticos que fallen
-      if (e.target && (e.target.src || e.target.href)) {
-        const recurso = e.target.src || e.target.href;
-        console.warn('Recurso fallido:', recurso);
-        
-        // Reintentar carga para scripts y estilos
-        if (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK') {
-          setTimeout(() => {
-            console.log('Reintentando carga de:', recurso);
-            
-            if (e.target.tagName === 'SCRIPT') {
-              const nuevoScript = document.createElement('script');
-              for (const attr of e.target.attributes) {
-                nuevoScript.setAttribute(attr.name, attr.value);
-              }
-              e.target.parentNode.replaceChild(nuevoScript, e.target);
-            } else if (e.target.tagName === 'LINK') {
-              const nuevoLink = document.createElement('link');
-              for (const attr of e.target.attributes) {
-                nuevoLink.setAttribute(attr.name, attr.value);
-              }
-              e.target.parentNode.replaceChild(nuevoLink, e.target);
-            }
-          }, 1000);
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Sistema de detección y recuperación de errores -->
+  <script>
+    // Sistema simple de diagnóstico
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.error('Error detectado:', message, 'en', source, 'línea:', lineno);
+      // No mostrar mensajes de error si ya hay contenido en la página
+      if (document.getElementById('root') && document.getElementById('root').childElementCount === 0) {
+        document.getElementById('root').innerHTML = `
+          <div style="padding: 20px; font-family: sans-serif; max-width: 800px; margin: 0 auto;">
+            <h1>Error detectado</h1>
+            <p>Se ha producido un error al cargar la aplicación:</p>
+            <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">${message}</pre>
+            <button onclick="window.location.reload()" style="padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">Reintentar</button>
+          </div>
+        `;
+      }
+      return true;
+    };
+    
+    // Verificar carga correcta
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        var root = document.getElementById('root');
+        if (root && root.childElementCount === 0) {
+          console.warn('La aplicación no se ha cargado correctamente');
+          root.innerHTML = `
+            <div style="padding: 20px; font-family: sans-serif; max-width: 800px; margin: 0 auto;">
+              <h1>Abg. Wilson Alexander Ipiales Guerron</h1>
+              <p>Servicios legales profesionales en Ibarra, Ecuador.</p>
+              <p>La aplicación está cargando...</p>
+              <button onclick="window.location.reload()" style="padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">Recargar página</button>
+            </div>
+          `;
         }
-      }
+      }, 5000);
     });
-    
-    // Verificar que se haya cargado correctamente
-    window.addEventListener('DOMContentLoaded', function() {
-      console.log('DOM cargado completamente');
-    });
-    
-    // Forzar reload completo si ocurre algún error grave
-    window.addEventListener('unhandledrejection', function(event) {
-      console.error('Promesa rechazada no manejada:', event.reason);
-      
-      // Si hay demasiados errores, recargar la página
-      if (window.errorCount > 5) {
-        console.log('Demasiados errores, recargando página...');
-        window.location.reload(true);
-      }
-    });
-    
-    // Contador global de errores
-    window.errorCount = 0;
   </script>
 </head>
 <body>
   <div id="root"></div>
-  
-  <!-- En desarrollo usará la ruta módulo, en producción Vite reemplazará esto con las rutas correctas -->
   <script type="module" src="/src/main.jsx"></script>
-  
-  <!-- Script para diagnóstico y recuperación -->
-  <script>
-    // Verificar que el contenedor root tenga contenido
-    setTimeout(function() {
-      const root = document.getElementById('root');
-      if (root && (!root.hasChildNodes() || root.children.length === 0)) {
-        console.warn('Aplicación React no se ha inicializado correctamente, intentando recuperar...');
-        window.location.reload(true);
-      } else {
-        console.log('Aplicación React inicializada correctamente');
-      }
-    }, 5000);
-  </script>
 </body>
 </html>

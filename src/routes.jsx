@@ -3,7 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { lazy } from 'react';
 
 // Importación de componentes con lazy loading para mejor rendimiento
-const Home = lazy(() => import('./components/Hero'));
+const Home = lazy(() => import('./components/Hero.jsx'));
 const Services = lazy(() => import('./components/Services'));
 const Contact = lazy(() => import('./components/Contact/ContactPage'));
 const Login = lazy(() => import('./components/Auth/Login'));

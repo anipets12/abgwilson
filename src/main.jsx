@@ -1,65 +1,45 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { HelmetProvider } from 'react-helmet-async';
-import { AuthProvider } from './context/AuthContext';
-import { initializeAnalytics } from './utils/seo';
+// Router ya está en App.jsx, no lo importamos aquí
 import App from './App';
 import './index.css';
-import ErrorBoundary from './components/ErrorBoundary';
 
-// Configuración de React Query
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            retry: 1,
-            refetchOnWindowFocus: false,
-        },
-    },
-});
-
-// Inicializar analíticas
-initializeAnalytics();
+// Asegurar que se carga correctamente el CSS
+import './assets/tailwind.css';
 
 // Función para renderizar la aplicación
 function renderApp() {
-    const rootElement = document.getElementById('root');
+  try {
+    const root = document.getElementById('root');
     
-    if (!rootElement) {
-        console.error('Error: Elemento root no encontrado');
-        return;
+    if (!root) {
+      console.error('Error: No se encontró el elemento root');
+      return;
     }
     
-    try {
-        // Crear root de React y renderizar la aplicación
-        ReactDOM.createRoot(rootElement).render(
-            <React.StrictMode>
-                <ErrorBoundary>
-                    <HelmetProvider>
-                        <QueryClientProvider client={queryClient}>
-                            <AuthProvider>
-                                <BrowserRouter>
-                                    <Suspense fallback={<div>Loading...</div>}>
-                                        <App />
-                                    </Suspense>
-                                </BrowserRouter>
-                            </AuthProvider>
-                        </QueryClientProvider>
-                    </HelmetProvider>
-                </ErrorBoundary>
-            </React.StrictMode>
-        );
-        
-        console.log('React inicializado correctamente');
-    } catch (error) {
-        console.error('Error al renderizar React:', error);
-    }
+    ReactDOM.createRoot(root).render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+    
+    console.log('Aplicación React inicializada correctamente');
+  } catch (error) {
+    console.error('Error al inicializar React:', error);
+    document.body.innerHTML = `
+      <div style="padding: 20px; font-family: sans-serif; max-width: 800px; margin: 0 auto;">
+        <h1>Error al inicializar la aplicación</h1>
+        <p>Se ha producido un error al cargar la aplicación.</p>
+        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">${error.message}</pre>
+        <button onclick="window.location.reload()" style="padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">Reintentar</button>
+      </div>
+    `;
+  }
 }
 
-// Inicialización segura que funciona en todos los entornos, incluyendo Cloudflare Workers
+// Iniciar la aplicación de forma segura
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', renderApp);
+  document.addEventListener('DOMContentLoaded', renderApp);
 } else {
-    renderApp();
+  renderApp();
 }

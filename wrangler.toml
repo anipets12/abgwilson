@@ -1,20 +1,6 @@
 name = "abogado-wilson-website"
-main = "src/worker-super.js"
+main = "src/worker-simple.js"
 compatibility_date = "2023-11-21"
-compatibility_flags = ["nodejs_compat"]
 
-# Tipo de worker
-type = "javascript"
-workers_dev = true
-
-# Evitar bundling para mejor diagnóstico
-no_bundle = true
-
-# Configuración del sitio
 [site]
 bucket = "./dist"
-
-# Configuración de compilación
-[build]
-command = "npm run build"
-watch_dir = "src"
