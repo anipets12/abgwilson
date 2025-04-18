@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
   <!-- Metadatos SEO optimizados -->
   <title>Abg. Wilson Alexander Ipiales Guerron - Asesoría Legal Profesional</title>
   <meta name="description" content="Asesoría legal profesional en derecho penal, civil, tránsito, comercial y aduanas. Protegiendo sus derechos con experiencia y dedicación en Ibarra, Ecuador.">
   <meta name="keywords" content="abogado, derecho penal, derecho civil, derecho de tránsito, derecho comercial, aduanas, asesoría legal, Ibarra, Ecuador">
   <meta name="author" content="Abg. Wilson Alexander Ipiales Guerron">
-  <!-- Corrección para error 1042 en Cloudflare Workers -->
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   
   <!-- Open Graph / Facebook -->
@@ -34,25 +34,65 @@
   
   <!-- Correcciones para problemas de carga -->
   <script type="text/javascript">
-    // Fix para error 1042 y problemas de carga en Cloudflare Workers
+    // Capturar y manejar errores de carga
     window.addEventListener('error', function(e) {
       console.error('Error capturado:', e.message);
-      // Intentar recargar recursos críticos que fallen
+      
+      // Reintentar cargar recursos críticos que fallen
       if (e.target && (e.target.src || e.target.href)) {
-        console.warn('Recurso fallido:', e.target.src || e.target.href);
+        const recurso = e.target.src || e.target.href;
+        console.warn('Recurso fallido:', recurso);
+        
+        // Reintentar carga para scripts y estilos
+        if (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK') {
+          setTimeout(() => {
+            console.log('Reintentando carga de:', recurso);
+            
+            if (e.target.tagName === 'SCRIPT') {
+              const nuevoScript = document.createElement('script');
+              for (const attr of e.target.attributes) {
+                nuevoScript.setAttribute(attr.name, attr.value);
+              }
+              e.target.parentNode.replaceChild(nuevoScript, e.target);
+            } else if (e.target.tagName === 'LINK') {
+              const nuevoLink = document.createElement('link');
+              for (const attr of e.target.attributes) {
+                nuevoLink.setAttribute(attr.name, attr.value);
+              }
+              e.target.parentNode.replaceChild(nuevoLink, e.target);
+            }
+          }, 1000);
+        }
       }
     });
+    
+    // Verificar que se haya cargado correctamente
+    window.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM cargado completamente');
+    });
+    
+    // Forzar reload completo si ocurre algún error grave
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('Promesa rechazada no manejada:', event.reason);
+      
+      // Si hay demasiados errores, recargar la página
+      if (window.errorCount > 5) {
+        console.log('Demasiados errores, recargando página...');
+        window.location.reload(true);
+      }
+    });
+    
+    // Contador global de errores
+    window.errorCount = 0;
   </script>
 </head>
 <body>
   <div id="root"></div>
+  
   <!-- En desarrollo usará la ruta módulo, en producción Vite reemplazará esto con las rutas correctas -->
   <script type="module" src="/src/main.jsx"></script>
-  <!-- Fix para error 1042 -->
-  <script>window.addEventListener("error", function(e) { console.error("Capturado:", e.message); });</script>
-  <!-- Fix para error 1042 -->
-  <script>window.addEventListener("error", function(e) { console.error("Capturado:", e.message); });</script>
-  <!-- Script para diagnóstico y recuperación ante errores -->
+  
+  <!-- Script para diagnóstico y recuperación -->
   <script>
     // Verificar que el contenedor root tenga contenido
     setTimeout(function() {
@@ -60,6 +100,8 @@
       if (root && (!root.hasChildNodes() || root.children.length === 0)) {
         console.warn('Aplicación React no se ha inicializado correctamente, intentando recuperar...');
         window.location.reload(true);
+      } else {
+        console.log('Aplicación React inicializada correctamente');
       }
     }, 5000);
   </script>

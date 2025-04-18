@@ -1,29 +1,26 @@
 name = "abogado-wilson-website"
-main = "src/spa-router.js"
+main = "src/worker-super.js"
 compatibility_date = "2023-11-21"
 compatibility_flags = ["nodejs_compat"]
 
-# Configuración para ES Module (requerido por D1)
+# Tipo de worker
 type = "javascript"
 workers_dev = true
 
-# Evitar procesamiento que pueda romper el código
+# Evitar bundling para mejor diagnóstico
 no_bundle = true
 
-# Directorios de archivos estáticos
+# Configuración del sitio
 [site]
 bucket = "./dist"
 
-# Configuración para bindings D1 y KV
-[[d1_databases]]
-binding = "DB"
-database_id = "f00d15a2-6069-4f19-a8eb-6f2217af2176"
-
-[[kv_namespaces]]
-binding = "ASSETS"
-id = "d977cf29acc749ba8aeabbcb2d395cb3"
-
-# Configuración de construcción
+# Configuración de compilación
 [build]
 command = "npm run build"
 watch_dir = "src"
+
+# Configuración de rutas SPA
+[[routes]]
+pattern = "/*"
+script = "src/worker-super.js"
+handler = "fetch"

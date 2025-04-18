@@ -9,6 +9,10 @@ export default {
   // Función principal que maneja todas las solicitudes
   async fetch(request, env, ctx) {
     try {
+      // Registrar cada solicitud para diagnóstico
+      const url = new URL(request.url);
+      console.log(`[REQUEST] ${request.method} ${url.pathname}`);
+      
       return await handleRequest(request, env, ctx);
     } catch (error) {
       console.error(`Error global: ${error.stack || error.message}`);
@@ -37,7 +41,8 @@ async function handleRequest(request, env, ctx) {
   }
 
   // 2. Manejo de archivos estáticos con extensiones conocidas
-  if (pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|eot|json)$/)) {
+  // IMPORTANTE: Aquí es donde se manejan los chunks dinámicos de código con lazy loading
+  if (pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|eot|json)$/) || pathname.includes('/assets/')) {
     return await handleAsset(request, env, pathname);
   }
   
@@ -76,6 +81,13 @@ async function handleAsset(request, env, pathname) {
       // Optimizar cache según tipo de archivo
       if (pathname.match(/\.(js|css)$/)) {
         headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+        
+        // IMPORTANTE: Asegurar que los chunks JS se sirvan con el tipo correcto
+        if (pathname.endsWith('.js')) {
+          headers.set('Content-Type', 'application/javascript');
+        } else if (pathname.endsWith('.css')) {
+          headers.set('Content-Type', 'text/css');
+        }
       } else if (pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|webp)$/)) {
         headers.set('Cache-Control', 'public, max-age=86400');
       }
@@ -145,6 +157,24 @@ async function serveSPA(url, env) {
     indexHtml = await indexResponse.text();
     console.log(`[SPA] index.html obtenido correctamente (${indexHtml.length} bytes)`);
     
+    // Manipulación del HTML para corregir el problema de inicialización de React
+    indexHtml = indexHtml.replace(
+      /<\/head>/,
+      `<script type="text/javascript">
+      // Fix para problemas de inicialización
+      window.addEventListener('load', function() {
+        // Forzar renderización inmediata sin esperar eventos adicionales
+        if (document.getElementById('root') && !document.getElementById('root').hasChildNodes()) {
+          console.log('Forzando renderización de React');
+          // Disparar evento DOMContentLoaded manualmente si es necesario
+          if (document.readyState === 'loading') {
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+          }
+        }
+      });
+      </script>\n</head>`
+    );
+    
     // Headers optimizados para SPA
     const headers = new Headers({
       'Content-Type': 'text/html; charset=UTF-8',
@@ -155,8 +185,8 @@ async function serveSPA(url, env) {
       'X-Frame-Options': 'DENY',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       'Access-Control-Allow-Origin': '*',
-      // CSP que permita todos los assets necesarios
-      'Content-Security-Policy': "default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval';"
+      // CSP más permisivo para garantizar funcionamiento
+      'Content-Security-Policy': "default-src * 'self' data: blob: 'unsafe-inline' 'unsafe-eval';"
     });
     
     return new Response(indexHtml, {
