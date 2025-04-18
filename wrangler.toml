@@ -1,14 +1,26 @@
 name = "abogado-wilson-website"
-main = "src/solucion-final.js"
+main = "src/worker-definitivo.js"
 compatibility_date = "2023-11-21"
 compatibility_flags = ["nodejs_compat"]
 
-# Configuración para formato ES Module - obligatorio para D1
+# Configuración más robusta para resolución de rutas SPA
 type = "javascript"
 workers_dev = true
 
-[build]
-command = "npm run build"
+# Evita el bundling para mantener código original
+no_bundle = true
 
+# Directorio para archivos estáticos
 [site]
 bucket = "./dist"
+
+# Bindings necesarios para D1
+[[d1_databases]]
+binding = "DB"
+database_name = "abogado_wilson_db"
+database_id = "f00d15a2-6069-4f19-a8eb-6f2217af2176"
+
+# Configuración de compilación
+[build]
+command = "npm run build"
+watch_dir = "src"
