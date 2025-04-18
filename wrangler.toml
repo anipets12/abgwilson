@@ -5,11 +5,8 @@ compatibility_date = "2023-11-21"
 [site]
 bucket = "./dist"
 
-# Configuración de KV para almacenamiento persistente
-[[kv_namespaces]]
-binding = "ABOGADO_STATE"
-id = "a6dd25dfe8834bc786f7c83ca06a22a5"
-preview_id = "a6dd25dfe8834bc786f7c83ca06a22a5"
+# Nota: El KV namespace se creará manualmente después del primer despliegue exitoso
+# y se agregará la referencia aquí posteriormente
 
 # Configuraciones adicionales para optimizar el rendimiento
 [build]

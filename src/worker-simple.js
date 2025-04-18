@@ -73,15 +73,28 @@ export default {
       
       // Verificar si el KV está disponible y registrar la solicitud para diagnóstico
       let kvAvailable = false;
+      let kvError = null;
+      
+      // Intentamos usar KV solo si está disponible en el environment
       if (env.ABOGADO_STATE) {
         try {
+          // Envolvemos todas las operaciones KV en un try-catch para evitar fallos
           const counterResult = await incrementRequestCounter(env.ABOGADO_STATE);
           kvAvailable = (counterResult !== -1); // -1 indica que KV no está disponible
-          ctx.waitUntil(env.ABOGADO_STATE.put('lastRequestTime', new Date().toISOString()).catch(() => {}));
-        } catch (kvError) {
-          console.warn('Error al acceder al KV namespace:', kvError);
+          
+          // Solo intentamos escribir si KV está disponible
+          if (kvAvailable) {
+            ctx.waitUntil(env.ABOGADO_STATE.put('lastRequestTime', new Date().toISOString())
+              .catch(e => console.warn('Error guardando timestamp:', e)));
+          }
+        } catch (error) {
+          // Capturamos pero no fallamos si hay errores de KV
+          console.warn('Error al acceder al KV namespace:', error);
+          kvError = error.toString();
           // Continuamos normalmente aunque el KV no esté disponible
         }
+      } else {
+        console.log('Funcionando sin KV - modo de compatibilidad.');
       }
 
       const url = new URL(request.url);
