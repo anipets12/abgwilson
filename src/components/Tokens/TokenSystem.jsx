@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { toast } from 'react-hot-toast';
+import { supabase } from '../../config/supabase';
+import { AuthContext } from '../../contexts/AuthContext';
+import storageService from '../../services/storageService';
 
 /**
  * Sistema de tokens para los usuarios premium
+ * Componente mejorado con integración completa con Supabase
  */
 const TokenSystem = () => {
+  const { user } = useContext(AuthContext);
   const [tokens, setTokens] = useState({
     available: 0,
     used: 0,
@@ -13,63 +18,223 @@ const TokenSystem = () => {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [tokenPackages, setTokenPackages] = useState([]);
+  const [tokenHistory, setTokenHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
-    const fetchTokenData = async () => {
-      try {
-        setLoading(true);
+    if (user) {
+      fetchTokenData();
+      fetchTokenHistory();
+    }
+  }, [user]);
+
+  /**
+   * Obtiene los datos de tokens del usuario desde Supabase
+   */
+  const fetchTokenData = async () => {
+    try {
+      setLoading(true);
+      
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+      
+      // Obtener datos de tokens desde Supabase
+      const { data, error } = await supabase
+        .from('user_tokens')
+        .select('available_tokens, used_tokens, total_tokens')
+        .eq('user_id', user.id)
+        .single();
         
-        // En una implementación real, aquí se obtendrían los datos de los tokens desde una API
-        // Simulamos la carga de datos
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Datos simulados para demostración
+      if (error && error.code !== 'PGRST116') { // No data found
+        throw error;
+      }
+      
+      // Si el usuario no tiene registro de tokens, creamos uno nuevo
+      if (!data) {
+        const initialTokens = { available: 10, used: 0, total: 10 };
+        await supabase.from('user_tokens').insert({
+          user_id: user.id,
+          available_tokens: initialTokens.available,
+          used_tokens: initialTokens.used,
+          total_tokens: initialTokens.total
+        });
+        setTokens(initialTokens);
+      } else {
         setTokens({
-          available: 15,
-          used: 5,
-          total: 20
+          available: data.available_tokens,
+          used: data.used_tokens,
+          total: data.total_tokens
+        });
+      }
+      
+      // Obtener paquetes de tokens disponibles
+      const { data: packagesData, error: packagesError } = await supabase
+        .from('token_packages')
+        .select('*')
+        .order('price', { ascending: true });
+        
+      if (packagesError) throw packagesError;
+      
+      if (packagesData && packagesData.length > 0) {
+        setTokenPackages(packagesData);
+      } else {
+        // Crear paquetes predeterminados si no existen
+        const defaultPackages = [
+          { name: 'Paquete Básico', amount: 10, price: 15.99, image_url: null },
+          { name: 'Paquete Estándar', amount: 25, price: 29.99, image_url: null },
+          { name: 'Paquete Premium', amount: 50, price: 49.99, image_url: null }
+        ];
+        
+        await supabase.from('token_packages').insert(defaultPackages);
+        setTokenPackages(defaultPackages.map((pkg, idx) => ({ ...pkg, id: idx + 1 })));
+      }
+    } catch (err) {
+      console.error('Error al cargar datos de tokens:', err);
+      toast.error('No se pudieron cargar los datos de tokens');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Obtiene el historial de transacciones de tokens del usuario
+   */
+  const fetchTokenHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+      
+      // Obtener historial de transacciones desde Supabase
+      const { data, error } = await supabase
+        .from('token_transactions')
+        .select('id, amount, type, description, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+        
+      if (error) throw error;
+      
+      setTokenHistory(data || []);
+    } catch (err) {
+      console.error('Error al cargar historial de tokens:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  /**
+   * Maneja la carga de imágenes para paquetes de tokens
+   * @param {File} file - Archivo de imagen a subir
+   * @param {number} packageId - ID del paquete al que se asignará la imagen
+   */
+  const handleImageUpload = async (file, packageId) => {
+    try {
+      setUploadingImage(true);
+      
+      if (!file) throw new Error('No se seleccionó un archivo');
+      
+      // Verificar que sea una imagen
+      if (!file.type.startsWith('image/')) {
+        throw new Error('El archivo debe ser una imagen');
+      }
+      
+      // Subir archivo a Supabase Storage
+      const uploadResult = await storageService.uploadFile(
+        file,
+        'packages',
+        'tokens',
+        { packageId: packageId.toString() }
+      );
+      
+      if (!uploadResult) throw new Error('Error al subir la imagen');
+      
+      // Actualizar la URL de la imagen en la base de datos
+      const { error } = await supabase
+        .from('token_packages')
+        .update({ image_url: uploadResult.url })
+        .eq('id', packageId);
+        
+      if (error) throw error;
+      
+      // Actualizar estado local
+      setTokenPackages(prev =>
+        prev.map(pkg => pkg.id === packageId ? { ...pkg, image_url: uploadResult.url } : pkg)
+      );
+      
+      toast.success('Imagen actualizada correctamente');
+    } catch (err) {
+      console.error('Error al subir imagen:', err);
+      toast.error(err.message || 'Error al subir la imagen');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  /**
+   * Realiza una compra de tokens para el usuario
+   * @param {number} packageId - ID del paquete de tokens a comprar
+   */
+  const handlePurchaseTokens = async (packageId) => {
+    try {
+      const selectedPackage = tokenPackages.find(pkg => pkg.id === packageId);
+      if (!selectedPackage) return;
+      
+      setPurchasing(true);
+      
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+      
+      // Simulación de procesamiento de pago (en producción se integraría con un gateway de pago)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Actualizar los tokens del usuario
+      const newAvailableTokens = tokens.available + selectedPackage.amount;
+      const newTotalTokens = tokens.total + selectedPackage.amount;
+      
+      // Actualizar en base de datos
+      const { error: updateError } = await supabase
+        .from('user_tokens')
+        .update({
+          available_tokens: newAvailableTokens,
+          total_tokens: newTotalTokens
+        })
+        .eq('user_id', user.id);
+        
+      if (updateError) throw updateError;
+      
+      // Registrar la transacción
+      const { error: transactionError } = await supabase
+        .from('token_transactions')
+        .insert({
+          user_id: user.id,
+          amount: selectedPackage.amount,
+          type: 'purchase',
+          description: `Compra de ${selectedPackage.name}`,
+          price: selectedPackage.price
         });
         
-        setTokenPackages([
-          { id: 1, name: 'Paquete Básico', amount: 10, price: 15.99 },
-          { id: 2, name: 'Paquete Estándar', amount: 25, price: 29.99 },
-          { id: 3, name: 'Paquete Premium', amount: 50, price: 49.99 }
-        ]);
-      } catch (err) {
-        console.error('Error al cargar datos de tokens:', err);
-        toast.error('No se pudieron cargar los datos de tokens');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTokenData();
-  }, []);
-
-  const handlePurchaseTokens = async (packageId) => {
-    const selectedPackage = tokenPackages.find(pkg => pkg.id === packageId);
-    if (!selectedPackage) return;
-    
-    setPurchasing(true);
-    
-    try {
-      // En una implementación real, aquí se enviaría la solicitud de compra a una API
-      console.log(`Comprando paquete de tokens: ${selectedPackage.name}`);
+      if (transactionError) throw transactionError;
       
-      // Simular tiempo de respuesta
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Actualizar tokens disponibles
+      // Actualizar el estado local
       setTokens(prev => ({
         ...prev,
-        available: prev.available + selectedPackage.amount,
-        total: prev.total + selectedPackage.amount
+        available: newAvailableTokens,
+        total: newTotalTokens
       }));
       
-      toast.success(`Has adquirido ${selectedPackage.amount} tokens correctamente.`);
+      toast.success(`¡Has adquirido ${selectedPackage.amount} tokens con éxito!`);
+      
+      // Refrescar el historial de transacciones
+      fetchTokenHistory();
     } catch (error) {
-      console.error('Error al comprar tokens:', error);
-      toast.error('Ocurrió un error al procesar tu compra. Inténtalo de nuevo.');
+      console.error('Error al procesar la compra:', error);
+      toast.error('No se pudo procesar tu compra. Intenta nuevamente.');
     } finally {
       setPurchasing(false);
     }

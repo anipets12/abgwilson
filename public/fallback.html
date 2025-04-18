@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abogado Wilson - Cargando</title>
+  <style>
+    :root {
+      --primary-color: #3457dc;
+      --text-color: #2c3e50;
+      --secondary-text: #596677;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 550px;
+      text-align: center;
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+      margin: 0 auto;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(52, 87, 220, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid var(--primary-color);
+      margin: 0 auto 20px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-color);
+    }
+    
+    p {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: var(--secondary-text);
+    }
+    
+    .reload-info {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #777;
+    }
+  </style>
+  <script>
+    // Recargar después de 3 segundos
+    setTimeout(() => {
+      window.location.reload();
+    }, 3000);
+    
+    // Intentar navegar al inicio después de 8 segundos si la recarga no funciona
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 8000);
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="loading-spinner"></div>
+    <h1>Cargando la plataforma</h1>
+    <p>Espera unos momentos mientras cargamos todos los recursos necesarios para brindarte la mejor experiencia.</p>
+    <p class="reload-info">La página se actualizará automáticamente...</p>
+  </div>
+</body>
+</html>
