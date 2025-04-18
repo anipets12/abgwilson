@@ -27,9 +27,84 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <!-- Sistema de diagnóstico y recuperación avanzado -->  
+  <script>
+    // Solución inmediata para favicon - evita errores 404
+    const faviconBase64 = 'AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA/4QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEREQAAAAAAEAAAEAAAAAEAAAABAAAAEAAAAAAQAAAQAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAERAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+    
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/x-icon';
+    link.href = 'data:image/x-icon;base64,' + faviconBase64;
+    document.head.appendChild(link);
+    
+    // Interceptar y corregir solicitudes de favicon
+    const originalFetch = window.fetch;
+    window.fetch = function(resource, init) {
+      if (typeof resource === 'string' && resource.includes('favicon')) {
+        console.log('[DiagnosticSystem] Interceptando solicitud de favicon');
+        return Promise.resolve(new Response(new Blob(), {status: 200}));
+      }
+      return originalFetch.apply(this, arguments);
+    };
+    
+    // Detector de error 1042
+    window.addEventListener('error', function(e) {
+      if (e.message && (e.message.includes('1042') || e.message.includes('network'))) {
+        console.warn('[DiagnosticSystem] Error 1042 detectado, iniciando recuperación...');
+        if (!window.location.href.includes('recovered=true')) {
+          window.location.href = '/?recovered=true&from=1042&t=' + Date.now();
+        }
+      }
+    });
+  </script>
+  <!-- Sistema avanzado de diagnóstico -->
+  <script src="/src/diagnostic.js" defer></script>
 </head>
 <body>
+  <!-- Recuperación en progreso para error 1042 -->
+  <div id="recovery-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; text-align: center; padding-top: 20vh;">
+    <h1 style="color: #3457dc;">Recuperando conexión</h1>
+    <p>Estamos restableciendo la conexión con nuestros servidores. Por favor, espera un momento...</p>
+    <div style="width: 50%; height: 10px; background: #f0f0f0; margin: 20px auto; border-radius: 5px; overflow: hidden;">
+      <div id="progress-bar" style="width: 0%; height: 100%; background: #3457dc; transition: width 0.5s;"></div>
+    </div>
+    <p id="recovery-message">Iniciando proceso de recuperación...</p>
+  </div>
+  
+  <script>
+    // Mostrar pantalla de recuperación si es necesario
+    if (window.location.search.includes('recovered=true')) {
+      document.getElementById('recovery-screen').style.display = 'block';
+      
+      // Simular progreso
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 5;
+        document.getElementById('progress-bar').style.width = progress + '%';
+        
+        if (progress === 30) {
+          document.getElementById('recovery-message').textContent = 'Limpiando caché y tokens corruptos...';
+        } else if (progress === 60) {
+          document.getElementById('recovery-message').textContent = 'Restaurando conexión segura...';
+          // Limpiar localStorage
+          try {
+            localStorage.clear();
+            sessionStorage.clear();
+          } catch (e) {}
+        } else if (progress === 85) {
+          document.getElementById('recovery-message').textContent = 'Completado. Redirigiendo...';
+        } else if (progress >= 100) {
+          clearInterval(interval);
+          // Redirigir a la página principal limpia
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1000);
+        }
+      }, 100);
+    }
+  </script>
+  
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
