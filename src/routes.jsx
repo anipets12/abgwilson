@@ -1,54 +1,64 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
-// Importar páginas principales
-import HomePage from './pages/Home';
-import ServicesPage from './pages/Services';
-import BlogPage from './pages/Blog';
-import ForumPage from './pages/Forum';
-import ContactPage from './pages/Contact';
-import NotFoundPage from './pages/NotFound';
+// Componente de carga para Suspense
+const LoadingComponent = () => (
+  <div className="flex items-center justify-center min-h-screen bg-white">
+    <div className="text-center">
+      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <p className="text-gray-600 text-sm">Cargando...</p>
+    </div>
+  </div>
+);
 
-// Páginas de Servicios por Especialidad
-import DerechoCivil from './pages/Services/Civil';
-import DerechoFamiliar from './pages/Services/Familiar';
-import DerechoMercantil from './pages/Services/Mercantil';
-import DerechoAdministrativo from './pages/Services/Administrativo';
-import DerechoTransito from './pages/Services/Transito';
+// Lazy load para páginas principales
+const HomePage = lazy(() => import('./pages/Home'));
+const ServicesPage = lazy(() => import('./pages/Services'));
+const BlogPage = lazy(() => import('./pages/Blog'));
+const ForumPage = lazy(() => import('./pages/Forum'));
+const ContactPage = lazy(() => import('./pages/Contact'));
+const NotFoundPage = lazy(() => import('./pages/NotFound'));
 
-// Consultas y Procesos
-import ProcessSearch from './components/ProcessSearch';
-import ConsultasPenales from './components/ConsultasPenales';
-import ConsultasTransito from './components/ConsultasTransito';
-import ConsultasCiviles from './components/ConsultasCiviles';
+// Lazy load para páginas de Servicios por Especialidad
+const DerechoCivil = lazy(() => import('./pages/Services/Civil'));
+const DerechoFamiliar = lazy(() => import('./pages/Services/Familiar'));
+const DerechoMercantil = lazy(() => import('./pages/Services/Mercantil'));
+const DerechoAdministrativo = lazy(() => import('./pages/Services/Administrativo'));
+const DerechoTransito = lazy(() => import('./pages/Services/Transito'));
 
-// Autenticación y Perfil
-import Login from './components/Auth/Login';
-import Register from './components/Auth/Register';
-import ForgotPassword from './components/Auth/ForgotPassword';
-import ResetPassword from './components/Auth/ResetPassword';
-import Profile from './components/Auth/Profile';
+// Lazy load para Consultas y Procesos
+const ProcessSearch = lazy(() => import('./components/ProcessSearch'));
+const ConsultasPenales = lazy(() => import('./components/ConsultasPenales'));
+const ConsultasTransito = lazy(() => import('./components/ConsultasTransito'));
+const ConsultasCiviles = lazy(() => import('./components/ConsultasCiviles'));
 
-// Dashboard
-import DashboardPage from './components/Dashboard/DashboardPage';
-import ClientDashboard from './components/Dashboard/ClientDashboard';
+// Lazy load para Autenticación y Perfil
+const Login = lazy(() => import('./components/Auth/Login'));
+const Register = lazy(() => import('./components/Auth/Register'));
+const ForgotPassword = lazy(() => import('./components/Auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./components/Auth/ResetPassword'));
+const Profile = lazy(() => import('./components/Auth/Profile'));
 
-// Sistema de Citas
-import Appointments from './pages/Appointments/Appointments';
+// Lazy load para Dashboard
+const DashboardPage = lazy(() => import('./components/Dashboard/DashboardPage'));
+const ClientDashboard = lazy(() => import('./components/Dashboard/ClientDashboard'));
 
-// E-Commerce y Afiliados
-import EbooksPage from './pages/Ebooks';
-import AfiliadosPage from './pages/Afiliados';
-import Cart from './components/Cart';
+// Lazy load para Sistema de Citas
+const Appointments = lazy(() => import('./pages/Appointments/Appointments'));
 
-// Certificados y servicios adicionales
-import Certificates from './pages/Certificates';
-import Sponsorships from './pages/Sponsorships';
-import ThankYou from './pages/ThankYou';
+// Lazy load para E-Commerce y Afiliados
+const EbooksPage = lazy(() => import('./pages/Ebooks'));
+const AfiliadosPage = lazy(() => import('./pages/Afiliados'));
+const Cart = lazy(() => import('./components/Cart'));
 
-// Términos y Políticas
-import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
-import TermsConditions from './pages/Legal/TermsConditions';
+// Lazy load para Certificados y servicios adicionales
+const Certificates = lazy(() => import('./pages/Certificates'));
+const Sponsorships = lazy(() => import('./pages/Sponsorships'));
+const ThankYou = lazy(() => import('./pages/ThankYou'));
+
+// Lazy load para Términos y Políticas
+const PrivacyPolicy = lazy(() => import('./pages/Legal/PrivacyPolicy'));
+const TermsConditions = lazy(() => import('./pages/Legal/TermsConditions'));
 
 // Contenido Exclusivo y Suscripciones
 import PlanPremium from './components/Suscripcion/PlanPremium';
@@ -73,7 +83,7 @@ import AdminAffiliates from './pages/Admin/Affiliates';
 
 const AppRoutes = () => {
   return (
-    <BrowserRouter>
+    <Suspense fallback={<LoadingComponent />}>
       <Routes>
         {/* Rutas Públicas */}
         <Route path="/" element={<HomePage />} />
@@ -187,7 +197,7 @@ const AppRoutes = () => {
         {/* Ruta 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-    </BrowserRouter>
+    </Suspense>
   );
 };
 

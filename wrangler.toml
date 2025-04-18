@@ -1,6 +1,37 @@
 name = "abogado-wilson-website"
-main = "src/worker-simple.js"
+main = "workers-site/index.js"
 compatibility_date = "2023-11-21"
+compatibility_flags = ["nodejs_compat"]
 
 [site]
 bucket = "./dist"
+include = ["**/*"]
+exclude = [".git/**"]
+
+[build]
+command = "npm run build"
+watch_dir = "src"
+
+[env.production]
+name = "abogado-wilson-website-prod"
+route = "abogado-wilson.com/*"
+
+[miniflare]
+kv_persist = true
+cache = true
+
+# Configuración de límites y rendimiento
+[limits]
+cpu_ms = 50
+memory_mb = 128
+uploads_mb = 100
+downloads_mb = 100
+durableobjects_bindings = 0
+
+# Configuración de caché para mejorar el rendimiento
+[triggers]
+crons = []
+
+# Ajustes de seguridad para Cloudflare Workers
+[security]
+content_security_policy = true
