@@ -73,36 +73,93 @@
   </div>
   
   <script>
-    // Mostrar pantalla de recuperación si es necesario
-    if (window.location.search.includes('recovered=true')) {
-      document.getElementById('recovery-screen').style.display = 'block';
-      
-      // Simular progreso
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 5;
-        document.getElementById('progress-bar').style.width = progress + '%';
+    // Solución definitiva - Evitar ciclos infinitos y manejar correctamente la recuperación
+    (function() {
+      // Si estamos en la página de recuperación
+      if (window.location.search.includes('recovered=true')) {
+        // Verificar si estamos en un ciclo de recuperación
+        const recoveryAttempts = parseInt(localStorage.getItem('recoveryAttempts') || '0');
         
-        if (progress === 30) {
-          document.getElementById('recovery-message').textContent = 'Limpiando caché y tokens corruptos...';
-        } else if (progress === 60) {
-          document.getElementById('recovery-message').textContent = 'Restaurando conexión segura...';
-          // Limpiar localStorage
-          try {
-            localStorage.clear();
-            sessionStorage.clear();
-          } catch (e) {}
-        } else if (progress === 85) {
-          document.getElementById('recovery-message').textContent = 'Completado. Redirigiendo...';
-        } else if (progress >= 100) {
-          clearInterval(interval);
-          // Redirigir a la página principal limpia
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 1000);
+        if (recoveryAttempts > 3) {
+          // Demasiados intentos de recuperación - limpiar todo y forzar refresco limpio
+          console.log('Demasiados intentos de recuperación, realizando limpieza completa...');
+          localStorage.clear();
+          sessionStorage.clear();
+          // Limpiar todas las cookies
+          document.cookie.split(';').forEach(cookie => {
+            const name = cookie.split('=')[0].trim();
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+          });
+          
+          // Redireccionar sin parámetros
+          window.location.replace('/');
+          return;
         }
-      }, 100);
-    }
+        
+        // Registrar intento de recuperación
+        localStorage.setItem('recoveryAttempts', (recoveryAttempts + 1).toString());
+        
+        // Mostrar pantalla de recuperación
+        document.getElementById('recovery-screen').style.display = 'block';
+        
+        // Simular progreso
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 5;
+          document.getElementById('progress-bar').style.width = progress + '%';
+          
+          if (progress === 30) {
+            document.getElementById('recovery-message').textContent = 'Limpiando caché y tokens corruptos...';
+          } else if (progress === 50) {
+            document.getElementById('recovery-message').textContent = 'Eliminando datos de navegación...';
+            // Limpiar localStorage y sessionStorage
+            try {
+              localStorage.removeItem('supabase.auth.token');
+              localStorage.removeItem('authSession');
+              localStorage.removeItem('authUser');
+              sessionStorage.clear();
+            } catch (e) {}
+          } else if (progress === 75) {
+            document.getElementById('recovery-message').textContent = 'Restaurando conexión segura...';
+          } else if (progress === 90) {
+            document.getElementById('recovery-message').textContent = 'Completado. Redirigiendo...';
+          } else if (progress >= 100) {
+            clearInterval(interval);
+            // Redireccionar a la página principal sin parámetros usando replace
+            // para evitar que quede en el historial
+            localStorage.setItem('recoverySuccessful', 'true');
+            localStorage.setItem('recoveryAttempts', '0'); // Resetear contador
+            window.location.replace('/');
+          }
+        }, 80); // Más rápido para evitar tiempos de espera largos
+      } else if (localStorage.getItem('recoverySuccessful') === 'true') {
+        // Acabamos de completar una recuperación exitosa
+        localStorage.removeItem('recoverySuccessful');
+        // Mostrar mensaje temporal de éxito
+        setTimeout(() => {
+          const successMsg = document.createElement('div');
+          successMsg.style.position = 'fixed';
+          successMsg.style.top = '20px';
+          successMsg.style.left = '50%';
+          successMsg.style.transform = 'translateX(-50%)';
+          successMsg.style.backgroundColor = '#4caf50';
+          successMsg.style.color = 'white';
+          successMsg.style.padding = '10px 20px';
+          successMsg.style.borderRadius = '4px';
+          successMsg.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+          successMsg.style.zIndex = '9999';
+          successMsg.style.transition = 'opacity 0.5s';
+          successMsg.textContent = 'Recuperación completada con éxito';
+          document.body.appendChild(successMsg);
+          
+          // Ocultar después de 3 segundos
+          setTimeout(() => {
+            successMsg.style.opacity = '0';
+            setTimeout(() => successMsg.remove(), 500);
+          }, 3000);
+        }, 1000);
+      }
+    })();
   </script>
   
   <div id="root"></div>

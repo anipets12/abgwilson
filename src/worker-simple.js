@@ -196,14 +196,31 @@ export default {
         return fetch(request);
       }
 
-      // 8. Sistema de recuperación: Detectar parámetros de recuperación
-      if (url.searchParams.has('recover') || url.searchParams.has('recovered')) {
-        // Limpiar contadores de error en KV
-        if (env.ABOGADO_STATE) {
-          ctx.waitUntil(resetErrorCounter(env.ABOGADO_STATE, sessionId));
-        }
+      // 8. Sistema de recuperación:// SOLUCIÓN DEFINITIVA FINAL - Redirección directa para error 1042
+      if (url.searchParams.has('recovered') && url.searchParams.get('from') === '1042') {
+        // Redireccionar directamente a la página principal
+        return new Response('', {
+          status: 302,
+          headers: {
+            'Location': '/',
+            'Cache-Control': 'no-store',
+            ...corsHeaders
+          }
+        });
       }
       
+      // Página de recuperación alternativa
+      if (url.searchParams.has('recovery-light')) {
+        return new Response('<html><body><h1>Recuperación en progreso...</h1></body></html>', {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html',
+            'Cache-Control': 'no-store',
+            ...corsHeaders
+          }
+        });
+      }
+
       // 9. Sistema de recuperación: Detectar si el error 1042 ya ocurrió repetidamente
       if (url.searchParams.has('recover1042')) {
         // Verificar el contador de errores en KV
