@@ -4,18 +4,14 @@
  * y que las importaciones sean válidas para evitar errores de compilación.
  */
 
-import fs from 'fs';
-import path from 'path';
-import chalk from 'chalk';
-import { globSync } from 'glob';
-import * as babel from '@babel/parser';
-import traverse from '@babel/traverse';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+const fs = require('fs');
+const path = require('path');
+const chalk = require('chalk');
+const glob = require('glob');
+const babel = require('@babel/parser');
+const traverse = require('@babel/traverse').default;
 
 // Configuración
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const srcDir = path.join(rootDir, 'src');
 const excludeDirs = ['node_modules', 'build', 'dist', 'public'];
@@ -86,7 +82,7 @@ function extractComponentName(filePath) {
 function findAllComponentFiles() {
   console.log(chalk.blue('🔍 Buscando componentes React...'));
   
-  const jsxFiles = globSync('**/*.{jsx,tsx}', {
+  const jsxFiles = glob.sync('**/*.{jsx,tsx}', {
     cwd: srcDir,
     ignore: excludeDirs.map(dir => `**/${dir}/**`)
   });
@@ -115,7 +111,7 @@ function findAllComponentFiles() {
 function checkImports() {
   console.log(chalk.blue('🔍 Verificando importaciones...'));
   
-  const jsxFiles = globSync('**/*.{jsx,tsx}', {
+  const jsxFiles = glob.sync('**/*.{jsx,tsx}', {
     cwd: srcDir,
     ignore: excludeDirs.map(dir => `**/${dir}/**`)
   });
@@ -154,8 +150,7 @@ function checkImports() {
             // Verificar paquetes externos
             if (!importSource.startsWith('@') && importSource !== 'react' && importSource !== 'react-dom') {
               try {
-                // En ES modules no podemos usar require.resolve, así que asumimos que está bien
-                // Los errores reales aparecerán en la compilación
+                require.resolve(importSource, { paths: [rootDir] });
               } catch (error) {
                 warnings.push({
                   type: 'dependency',
@@ -180,7 +175,7 @@ function checkImports() {
 function checkRoutes() {
   console.log(chalk.blue('🔍 Verificando configuración de rutas...'));
   
-  const routesFiles = globSync('**/routes.{jsx,tsx,js,ts}', {
+  const routesFiles = glob.sync('**/routes.{jsx,tsx,js,ts}', {
     cwd: srcDir,
     ignore: excludeDirs.map(dir => `**/${dir}/**`)
   });
