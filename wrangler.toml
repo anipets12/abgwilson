@@ -1,5 +1,5 @@
 name = "abogado-wilson-website"
-main = "src/worker-index.js"
+main = "src/worker-basic.js"
 compatibility_date = "2023-11-21"
 
 [site]
