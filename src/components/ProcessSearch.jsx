@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { dataService } from '../services/apiService';
+import apiService from '../services/apiService';
 import { FaSearch, FaSpinner, FaExclamationTriangle, FaFileAlt } from 'react-icons/fa';
 
 const ProcessSearch = () => {
@@ -41,14 +41,31 @@ const ProcessSearch = () => {
 
   const fetchRecentSearches = async () => {
     try {
-      // Usar método getAll directamente sin esperar from().select()
-      const response = await dataService.getAll('searches');
-      const { data, error } = response;
+      // Simulación de carga de búsquedas recientes
+      const mockRecentSearches = [
+        {
+          search_type: 'numero',
+          search_value: '10201-2023-00123',
+          province: 'imbabura',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() // Ayer
+        },
+        {
+          search_type: 'actor',
+          search_value: 'PEREZ MARTINEZ',
+          province: 'pichincha',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString() // Hace 2 días
+        },
+        {
+          search_type: 'demandado',
+          search_value: 'RODRIGUEZ LOPEZ',
+          province: 'imbabura',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString() // Hace 3 días
+        }
+      ];
       
-      if (error) throw error;
-      // Ordenar los resultados manualmente si es necesario
-      const sortedData = data ? [...data].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 5) : [];
-      setRecentSearches(sortedData || []);
+      // Ordenar los resultados por fecha
+      const sortedData = mockRecentSearches.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      setRecentSearches(sortedData);
     } catch (error) {
       console.error('Error al cargar búsquedas recientes:', error);
       setRecentSearches([]);
@@ -68,7 +85,7 @@ const ProcessSearch = () => {
     setResults([]);
 
     try {
-      // Guardar la búsqueda en la base de datos
+      // Guardar la búsqueda en memoria (no en base de datos)
       const searchData = {
         search_type: searchParams.type,
         search_value: searchParams.value,
@@ -76,52 +93,25 @@ const ProcessSearch = () => {
         timestamp: new Date().toISOString()
       };
       
-      const { error: insertError } = await dataService.create('searches', searchData);
-      if (insertError) throw insertError;
+      // Actualizar búsquedas recientes en memoria
+      setRecentSearches([searchData, ...recentSearches.slice(0, 4)]);
 
-      // Realizar la búsqueda de procesos judiciales
-      // Utilizamos el método search personalizado en lugar de from().select()
-      const { data, error: searchError } = await dataService.search('judicial_processes', {
-        searchType: searchParams.type,
-        searchValue: searchParams.value,
-        province: searchParams.province
-      });
+      // Realizar la búsqueda de procesos judiciales usando apiService
+      const searchResults = await apiService.searchJudicialProcess(
+        searchParams.type,
+        searchParams.value,
+        searchParams.province.toUpperCase()
+      );
 
-      if (searchError) throw searchError;
-
-      // Si no hay resultados en la base de datos, usar datos de ejemplo
-      if (!data || data.length === 0) {
-        // Simulación de resultados para demostración
-        const mockResults = [
-          {
-            id: `${searchParams.province}-2023-${Math.floor(Math.random() * 10000)}`,
-            tipo: ['PENAL', 'CIVIL', 'TRÁNSITO', 'ADMINISTRATIVO'][Math.floor(Math.random() * 4)],
-            actor: searchParams.type === 'actor' ? searchParams.value : 'FISCALÍA GENERAL DEL ESTADO',
-            demandado: searchParams.type === 'demandado' ? searchParams.value : 'PERSONA NATURAL/JURÍDICA',
-            fecha: new Date().toISOString().split('T')[0],
-            estado: ['EN TRÁMITE', 'ARCHIVADO', 'SENTENCIA', 'APELACIÓN'][Math.floor(Math.random() * 4)],
-            judicatura: `UNIDAD JUDICIAL DE ${provinces.find(p => p.id === searchParams.province)?.name.toUpperCase() || 'IMBABURA'}`
-          },
-          {
-            id: `${searchParams.province}-2023-${Math.floor(Math.random() * 10000)}`,
-            tipo: ['PENAL', 'CIVIL', 'TRÁNSITO', 'ADMINISTRATIVO'][Math.floor(Math.random() * 4)],
-            actor: 'JUAN PÉREZ',
-            demandado: 'MARÍA LÓPEZ',
-            fecha: new Date(Date.now() - 86400000 * 30).toISOString().split('T')[0],
-            estado: ['EN TRÁMITE', 'ARCHIVADO', 'SENTENCIA', 'APELACIÓN'][Math.floor(Math.random() * 4)],
-            judicatura: `UNIDAD JUDICIAL DE ${provinces.find(p => p.id === searchParams.province)?.name.toUpperCase() || 'IMBABURA'}`
-          }
-        ];
-        setResults(mockResults);
+      if (searchResults && searchResults.length > 0) {
+        setResults(searchResults);
       } else {
-        setResults(data);
+        // Si no hay resultados, mostrar mensaje
+        setError('No se encontraron resultados para su búsqueda');
       }
-
-      // Actualizar búsquedas recientes
-      fetchRecentSearches();
-    } catch (err) {
-      setError('Error al realizar la búsqueda. Por favor, intente nuevamente.');
-      console.error('Error:', err);
+    } catch (error) {
+      console.error('Error en la búsqueda:', error);
+      setError('Ocurrió un error al realizar la búsqueda. Por favor intente nuevamente.');
     } finally {
       setIsLoading(false);
     }
@@ -146,190 +136,184 @@ const ProcessSearch = () => {
   };
 
   return (
-    <div className="py-12 bg-secondary-50">
-      <div className="container-custom">
-        <motion.div 
+    <div className="bg-gray-50 py-12">
+      <div className="container mx-auto px-4">
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12"
+          className="bg-white rounded-lg shadow p-6 mb-8"
         >
-          <h2 className="section-title">Consulta de Procesos Judiciales</h2>
-          <p className="text-xl text-secondary-600 max-w-3xl mx-auto">
-            Busque información actualizada sobre procesos judiciales en Ecuador. 
-            Acceda a datos de causas por número, actor, demandado o judicatura.
+          <h2 className="text-2xl font-bold text-secondary-900 mb-6">
+            Consulta de Procesos Judiciales
+          </h2>
+          <p className="text-secondary-600 mb-6">
+            Busque información actualizada sobre procesos judiciales en Ecuador. Acceda a datos de causas por número, actor, demandado o judicatura.
           </p>
+
+          <form onSubmit={handleSearch} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="searchType" className="block text-sm font-medium text-secondary-700 mb-1">
+                  Tipo de Búsqueda
+                </label>
+                <select
+                  id="searchType"
+                  value={searchParams.type}
+                  onChange={e => setSearchParams({...searchParams, type: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                >
+                  {searchTypes.map(type => (
+                    <option key={type.id} value={type.id}>{type.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="province" className="block text-sm font-medium text-secondary-700 mb-1">
+                  Provincia
+                </label>
+                <select
+                  id="province"
+                  value={searchParams.province}
+                  onChange={e => setSearchParams({...searchParams, province: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                >
+                  {provinces.map(province => (
+                    <option key={province.id} value={province.id}>{province.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="searchValue" className="block text-sm font-medium text-secondary-700 mb-1">
+                  Valor de Búsqueda
+                </label>
+                <div className="relative">
+                  <input
+                    id="searchValue"
+                    type="text"
+                    value={searchParams.value}
+                    onChange={e => setSearchParams({...searchParams, value: e.target.value})}
+                    placeholder={`Ingrese ${searchTypes.find(t => t.id === searchParams.type)?.name.toLowerCase()}`}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  {searchParams.value && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchParams({...searchParams, value: ''})}
+                      className="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="px-4 py-2 border border-gray-300 rounded-md text-secondary-700 hover:bg-gray-50"
+              >
+                Limpiar
+              </button>
+              <button
+                type="submit"
+                className="btn-primary flex items-center"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <FaSpinner className="animate-spin mr-2" />
+                    Buscando...
+                  </>
+                ) : (
+                  <>
+                    <FaSearch className="mr-2" />
+                    Buscar
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </motion.div>
 
-        <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col md:flex-row gap-8">
-            <div className="md:w-2/3">
-              <motion.form 
-                onSubmit={handleSearch} 
-                className="card space-y-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Tipo de Búsqueda
-                    </label>
-                    <select
-                      value={searchParams.type}
-                      onChange={(e) => setSearchParams(prev => ({ ...prev, type: e.target.value }))}
-                      className="input-field"
-                    >
-                      {searchTypes.map(type => (
-                        <option key={type.id} value={type.id}>
-                          {type.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Provincia
-                    </label>
-                    <select
-                      value={searchParams.province}
-                      onChange={(e) => setSearchParams(prev => ({ ...prev, province: e.target.value }))}
-                      className="input-field"
-                    >
-                      {provinces.map(province => (
-                        <option key={province.id} value={province.id}>
-                          {province.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Valor de Búsqueda
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={searchParams.value}
-                        onChange={(e) => setSearchParams(prev => ({ ...prev, value: e.target.value }))}
-                        className="input-field pl-10"
-                        placeholder="Ingrese el valor a buscar"
-                        required
-                      />
-                      <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-400" />
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="md:w-2/3">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-xl font-semibold text-secondary-900 mb-4">Resultados de la Búsqueda</h3>
+              
+              {error && (
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <FaExclamationTriangle className="h-5 w-5 text-yellow-400" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-yellow-700">{error}</p>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex gap-3">
-                  <motion.button
-                    type="submit"
-                    className="flex-1 btn-primary flex items-center justify-center gap-2"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <FaSpinner className="animate-spin" />
-                        <span>Buscando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FaSearch />
-                        <span>Buscar</span>
-                      </>
-                    )}
-                  </motion.button>
-                  
-                  <motion.button
-                    type="button"
-                    onClick={handleClearSearch}
-                    className="btn-secondary"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Limpiar
-                  </motion.button>
-                </div>
-              </motion.form>
-
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg flex items-center gap-3"
-                >
-                  <FaExclamationTriangle />
-                  <span>{error}</span>
-                </motion.div>
               )}
-
-              {results.length > 0 && (
-                <motion.div 
+              
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <FaSpinner className="animate-spin h-8 w-8 text-primary-600 mx-auto" />
+                  <p className="mt-2 text-secondary-600">Buscando procesos judiciales...</p>
+                </div>
+              ) : results.length > 0 && (
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5 }}
-                  className="mt-8 space-y-4"
+                  className="space-y-4"
                 >
-                  <h3 className="text-xl font-semibold text-secondary-900">
-                    Resultados ({results.length})
-                  </h3>
-                  
                   {results.map((result, index) => (
                     <motion.div
-                      key={result.id}
-                      initial={{ opacity: 0, y: 10 }}
+                      key={result.id || index}
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="card hover:shadow-lg transition-shadow border-l-4 border-blue-500"
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-lg font-semibold text-secondary-900 flex items-center gap-2">
-                            <FaFileAlt className="text-blue-500" />
-                            {result.id}
-                          </h3>
-                          <p className="text-secondary-600">
-                            Tipo: {result.tipo}
-                          </p>
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          result.estado === 'EN TRÁMITE'
-                            ? 'bg-green-100 text-green-800'
-                            : result.estado === 'ARCHIVADO'
-                            ? 'bg-gray-100 text-gray-800'
-                            : result.estado === 'SENTENCIA'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                      <div className="flex justify-between">
+                        <h4 className="text-lg font-medium text-secondary-900">{result.numero || result.id}</h4>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          result.estado === 'EN TRÁMITE' ? 'bg-blue-100 text-blue-800' :
+                          result.estado === 'SENTENCIA' ? 'bg-green-100 text-green-800' :
+                          result.estado === 'ARCHIVADO' ? 'bg-gray-100 text-gray-800' :
+                          'bg-yellow-100 text-yellow-800'
                         }`}>
                           {result.estado}
                         </span>
                       </div>
-                      <div className="mt-4 grid grid-cols-2 gap-4">
+                      
+                      <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-y-2">
                         <div>
-                          <p className="text-sm text-secondary-500">Actor</p>
-                          <p className="text-secondary-900 font-medium">{result.actor}</p>
+                          <span className="text-sm font-medium text-secondary-500">Tipo:</span>
+                          <span className="ml-2 text-secondary-900">{result.tipo}</span>
                         </div>
                         <div>
-                          <p className="text-sm text-secondary-500">Demandado</p>
-                          <p className="text-secondary-900 font-medium">{result.demandado}</p>
+                          <span className="text-sm font-medium text-secondary-500">Fecha:</span>
+                          <span className="ml-2 text-secondary-900">{result.fecha}</span>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-secondary-500">Actor:</span>
+                          <span className="ml-2 text-secondary-900">{result.actor}</span>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium text-secondary-500">Demandado:</span>
+                          <span className="ml-2 text-secondary-900">{result.demandado}</span>
+                        </div>
+                        <div className="md:col-span-2">
+                          <span className="text-sm font-medium text-secondary-500">Judicatura:</span>
+                          <span className="ml-2 text-secondary-900">{result.judicatura}</span>
                         </div>
                       </div>
-                      <div className="mt-4 grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-secondary-500">Fecha</p>
-                          <p className="text-secondary-900">{new Date(result.fecha).toLocaleDateString('es-ES')}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-secondary-500">Judicatura</p>
-                          <p className="text-secondary-900">{result.judicatura}</p>
-                        </div>
-                      </div>
-                      <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end">
+                      
+                      <div className="mt-3 flex justify-end">
                         <button 
                           className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                           onClick={() => window.open(`https://consultas.funcionjudicial.gob.ec/informacionjudicial/public/informacion.jsf?causa=${result.id}`, '_blank')}
