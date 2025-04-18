@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../config/supabase';
+import { authService } from '../../services/authService';
 import { toast } from 'react-hot-toast';
 import { FaEnvelope, FaArrowLeft } from 'react-icons/fa';
 
@@ -38,15 +38,13 @@ const ForgotPassword = () => {
     try {
       console.log('Enviando solicitud de recuperación de contraseña para:', email);
       
-      const { error: resetError } = await executeWithRetry(() => 
-        supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/cambiar-contrasena`,
-        })
+      const result = await executeWithRetry(() => 
+        authService.resetPasswordRequest(email)
       );
       
-      if (resetError) {
-        console.error('Error al solicitar cambio de contraseña:', resetError);
-        throw resetError;
+      if (!result.success) {
+        console.error('Error al solicitar cambio de contraseña:', result.error);
+        throw new Error(result.error);
       }
       
       const successMessage = 'Se ha enviado un correo con instrucciones para restablecer tu contraseña.';

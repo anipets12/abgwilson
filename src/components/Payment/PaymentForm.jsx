@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { dataService } from '../../services/apiService';
+import apiService from '../../services/apiService';
 
 const PaymentForm = () => {
   const [cardNumber, setCardNumber] = useState('');

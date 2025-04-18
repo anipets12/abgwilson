@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { authService } from '../../services/apiService';
+import { authService } from '../../services/authService';
 import { toast } from 'react-hot-toast';
 import { FaLock, FaArrowLeft } from 'react-icons/fa';
 

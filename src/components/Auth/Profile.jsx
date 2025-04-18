@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { authService } from '../../services/apiService';
+import { authService } from '../../services/authService';
 import { toast } from 'react-hot-toast';
 import { FaUser, FaSignOutAlt } from 'react-icons/fa';
 
