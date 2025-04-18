@@ -33,6 +33,9 @@ import Profile from './components/Auth/Profile';
 import DashboardPage from './components/Dashboard/DashboardPage';
 import ClientDashboard from './components/Dashboard/ClientDashboard';
 
+// Sistema de Citas
+import Appointments from './pages/Appointments/Appointments';
+
 // E-Commerce y Afiliados
 import EbooksPage from './pages/Ebooks';
 import AfiliadosPage from './pages/Afiliados';
@@ -92,6 +95,7 @@ const AppRoutes = () => {
         <Route path="/certificados" element={<Certificates />} />
         <Route path="/patrocinios" element={<Sponsorships />} />
         <Route path="/gracias" element={<ThankYou />} />
+        <Route path="/citas" element={<Appointments />} />
         
         {/* Consultas */}
         <Route path="/consultas">

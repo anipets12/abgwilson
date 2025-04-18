@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "validate-components": "node scripts/validateComponents.js",
+    "validate-imports": "node scripts/validateImports.js",
+    "prebuild": "npm run validate-components"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
@@ -20,6 +23,7 @@
     "react-datepicker": "^4.16.0",
     "react-dom": "18.3.1",
     "react-hook-form": "^7.43.9",
+    "react-hot-toast": "2.5.2",
     "react-icons": "^4.12.0",
     "react-intersection-observer": "^9.5.2",
     "react-router-dom": "6.30.0",
@@ -29,10 +33,14 @@
     "stripe": "18.0.0"
   },
   "devDependencies": {
+    "@babel/parser": "7.27.0",
+    "@babel/traverse": "7.27.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.16",
+    "chalk": "5.4.1",
+    "glob": "11.0.1",
     "postcss": "^8.4.31",
     "tailwindcss": "3.4.17",
     "vite": "^5.0.0"
