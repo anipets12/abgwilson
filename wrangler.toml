@@ -8,8 +8,7 @@ bucket = "./dist"
 # Configuración de KV para almacenamiento persistente
 [[kv_namespaces]]
 binding = "ABOGADO_STATE"
-id = "abogado-state-kv"
-preview_id = "abogado-state-kv"
+# El ID será asignado automáticamente por Cloudflare al hacer deploy
 
 # Configuraciones adicionales para optimizar el rendimiento
 [build]

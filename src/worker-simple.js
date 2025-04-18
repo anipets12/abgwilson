@@ -60,21 +60,79 @@ export default {
    */
   async fetch(request, env, ctx) {
     try {
-      const url = new URL(request.url);
-      const requestMethod = request.method.toUpperCase();
+      // Obtener los encabezados CORS adecuados para la solicitud
       const corsHeaders = generateCorsHeaders(request);
-
-      // Obtener el ID de sesión para la persistencia de estado
+      
+      // Para solicitudes OPTIONS (CORS preflight), responder inmediatamente
+      if (request.method === "OPTIONS") {
+        return handleOptions(request);
+      }
+      
+      // Almacenar sesión si existe para diagnóstico
       const sessionId = getSessionId(request);
       
-      // Incrementar contador de solicitudes en KV (para diagnóstico)
+      // Verificar si el KV está disponible y registrar la solicitud para diagnóstico
+      let kvAvailable = false;
       if (env.ABOGADO_STATE) {
-        ctx.waitUntil(incrementRequestCounter(env.ABOGADO_STATE));
+        try {
+          const counterResult = await incrementRequestCounter(env.ABOGADO_STATE);
+          kvAvailable = (counterResult !== -1); // -1 indica que KV no está disponible
+          ctx.waitUntil(env.ABOGADO_STATE.put('lastRequestTime', new Date().toISOString()).catch(() => {}));
+        } catch (kvError) {
+          console.warn('Error al acceder al KV namespace:', kvError);
+          // Continuamos normalmente aunque el KV no esté disponible
+        }
       }
+
+      const url = new URL(request.url);
+      const requestMethod = request.method.toUpperCase();
 
       // 1. Sistema de diagnóstico: endpoint especial para verificar estado del Worker
       if (url.pathname === '/api/diagnostic/status') {
-        return handleDiagnosticRequest(request, env, ctx, corsHeaders);
+        let kvStatus = 'unavailable';
+        let kvRequestCount = 0;
+        
+        if (env.ABOGADO_STATE) {
+          try {
+            // Verificar disponibilidad del KV con un método no destructivo
+            const kvCheckValue = await env.ABOGADO_STATE.get('kvAvailable');
+            kvStatus = kvCheckValue ? 'available' : 'pending';
+            
+            // Intentar obtener contador de solicitudes si KV está disponible
+            if (kvStatus === 'available') {
+              const requestCountData = await env.ABOGADO_STATE.get('requestCount', { type: 'json' });
+              kvRequestCount = requestCountData?.count || 0;
+            }
+          } catch (e) {
+            console.warn('Error verificando estado KV:', e);
+            kvStatus = 'error';
+          }
+        }
+        
+        const diagnosticInfo = {
+          status: 'ok',
+          version: '1.0.1', // Versión actualizada
+          timestamp: new Date().toISOString(),
+          cors: corsHeaders ? 'enabled' : 'disabled',
+          requestMethod: requestMethod,
+          hostname: url.hostname,
+          sessionId: sessionId || 'none',
+          kv: {
+            status: kvStatus,
+            available: kvStatus === 'available',
+            requestCount: kvRequestCount,
+            binding: env.ABOGADO_STATE ? 'configured' : 'missing'
+          }
+        };
+        
+        return new Response(JSON.stringify(diagnosticInfo, null, 2), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache',
+            ...corsHeaders
+          }
+        });
       }
       
       // 2. Sistema de diagnóstico: endpoint para verificar KV
@@ -216,16 +274,31 @@ function parseCookies(cookieHeader) {
 }
 
 /**
- * Incrementa el contador de solicitudes en KV
- * Útil para diagnóstico y monitoreo
- */
-async function incrementRequestCounter(KV) {
+ * Incrementa contador de solicitudes en KV
+async function incrementRequestCounter(kv) {
+  if (!kv) return 0;
+  
   try {
-    const key = 'stats:requests:total';
-    const currentCount = await KV.get(key) || '0';
-    await KV.put(key, (parseInt(currentCount, 10) + 1).toString());
+    // Primero verificamos si el KV namespace está disponible con una operación simple
+    try {
+      await kv.get('kvCheck');
+    } catch (kvError) {
+      // Si hay un error específico de KV no disponible, lo manejamos silenciosamente
+      console.warn('KV namespace no disponible aún, ignorando operaciones KV');
+      return -1; // Indicador de que KV no está disponible
+    }
+    
+    const currentCount = await kv.get('requestCount', { type: 'json' }) || { count: 0 };
+    currentCount.count += 1;
+    await kv.put('requestCount', JSON.stringify(currentCount));
+    
+    // Establecer un indicador que el KV está funcionando
+    await kv.put('kvAvailable', 'true');
+    
+    return currentCount.count;
   } catch (e) {
     console.error('Error incrementando contador:', e);
+    return 0;
   }
 }
 
