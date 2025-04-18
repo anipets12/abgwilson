@@ -1,13 +1,17 @@
 /**
  * worker-final.js - Solución DEFINITIVA para SPA en Cloudflare Workers
  * Optimizado específicamente para resolver error 1042
+ * Convertido a formato ES Module para compatibilidad con D1
  */
 
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
-});
+// Exportar la función que maneja los eventos fetch
+export default {
+  async fetch(request, env, ctx) {
+    return await handleRequest(request, env);
+  }
+};
 
-async function handleRequest(request) {
+async function handleRequest(request, env) {
   const url = new URL(request.url);
   const { pathname } = url;
 
