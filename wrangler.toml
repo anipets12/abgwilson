@@ -4,3 +4,24 @@ compatibility_date = "2023-11-21"
 
 [site]
 bucket = "./dist"
+
+# Configuración de KV para almacenamiento persistente
+[[kv_namespaces]]
+binding = "ABOGADO_STATE"
+id = "abogado-state-kv"
+preview_id = "abogado-state-kv"
+
+# Configuraciones adicionales para optimizar el rendimiento
+[build]
+command = "npm run build"
+watch_dir = "src"
+
+# Configuraciones de entorno
+[env.production]
+# No incluimos variables de entorno sensibles aquí,
+# se configurarán en el Dashboard de Cloudflare
+
+# Variables para la configuración de Cloudflare
+[vars]
+ENABLE_DIAGNOSTICS = true
+CLOUDFLARE_ENV = "production"
