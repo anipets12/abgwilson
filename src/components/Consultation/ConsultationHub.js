@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+
 import AIConsultation from './AIConsultation';
 import DocumentGenerator from './DocumentGenerator';
 const ConsultationHub = () => {

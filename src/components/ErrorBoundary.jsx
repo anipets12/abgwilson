@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Component } from 'react';
 class ErrorBoundary extends Component {
     constructor() {
         super(...arguments);
@@ -14,10 +15,7 @@ class ErrorBoundary extends Component {
     }
     render() {
         if (this.state.hasError) {
-            return (<div className="error-page">
-          <h1>Lo sentimos, algo salió mal.</h1>
-          <p>Por favor, intente recargar la página.</p>
-        </div>);
+            return (_jsxs("div", { className: "error-page", children: [_jsx("h1", { children: "Lo sentimos, algo sali\u00F3 mal." }), _jsx("p", { children: "Por favor, intente recargar la p\u00E1gina." })] }));
         }
         return this.props.children;
     }

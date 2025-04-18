@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+
 import { Link } from 'react-router-dom';
 import { FaGavel, FaBalanceScale, FaCarCrash, FaShip, FaBuilding, FaHandshake, FaFileContract, FaUserTie, FaMoneyBillWave } from 'react-icons/fa';
 // Paquetes de suscripción

@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import axios from 'axios';
+
+
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 export default function Registration() {

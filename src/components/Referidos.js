@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React from 'react';
-import { motion } from 'framer-motion';
+
 import { Link } from 'react-router-dom';
 import { FaHandshake, FaGift, FaLightbulb, FaChartLine, FaRegPaperPlane, FaStar, FaRegCommentDots } from 'react-icons/fa';
 const Referidos = () => {

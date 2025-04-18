@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+
 import { insertData } from '../services/supabase';
 import { FaGift, FaBookOpen, FaHandshake, FaFileAlt, FaMoneyBillWave } from 'react-icons/fa';
 export default function Affiliates() {

@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+
 import { generateLegalDocument } from '../../utils/openai';
 const DocumentGenerator = () => {
     const [formData, setFormData] = useState({

@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React from 'react';
-import { motion } from 'framer-motion';
+
 import { FaWhatsapp, FaPhone } from 'react-icons/fa';
 const WhatsAppFloatingButton = () => {
     // Mensaje predeterminado para WhatsApp

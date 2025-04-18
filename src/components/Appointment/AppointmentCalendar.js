@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+
 import { FaCalendarAlt, FaClock, FaUser, FaEnvelope, FaPhone, FaCommentAlt, FaCheck } from 'react-icons/fa';
 const AppointmentCalendar = () => {
     const [selectedDate, setSelectedDate] = useState(null);

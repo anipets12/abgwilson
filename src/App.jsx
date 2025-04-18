@@ -1,106 +1,65 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import MainNavigation from './components/Navigation/MainNavigation';
+import MainFooter from './components/Footer/MainFooter';
+import Loading from './components/Loading';
+import WhatsAppButton from './components/Common/WhatsAppButton';
+import ErrorBoundary from './components/ErrorBoundary';
 
-// Componente de página de inicio simple
-const Home = () => (
-  <div className="min-h-screen bg-gray-50 flex flex-col">
-    <header className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-gray-900">Abg. Wilson Alexander Ipiales Guerron</h1>
-      </div>
-    </header>
-    <main className="flex-grow">
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="border-2 border-gray-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Servicios legales profesionales en Ibarra, Ecuador</h2>
-            <p className="mb-4">Ofrecemos asesoría legal especializada en:</p>
-            <ul className="list-disc pl-5 mb-4">
-              <li>Derecho Civil</li>
-              <li>Derecho Penal</li>
-              <li>Derecho Laboral</li>
-              <li>Derecho Administrativo</li>
-              <li>Trámites Notariales</li>
-            </ul>
-            <p>Contáctenos para más información.</p>
-          </div>
-        </div>
-      </div>
-    </main>
-    <footer className="bg-white">
-      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-        <p className="text-center text-gray-500">© 2025 Abg. Wilson Alexander Ipiales Guerron</p>
-      </div>
-    </footer>
-  </div>
-);
+// Carga diferida de componentes
+const Home = lazy(() => import('./pages/Home'));
+const Services = lazy(() => import('./pages/Services'));
+const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
+const Blog = lazy(() => import('./pages/Blog'));
+const BlogPost = lazy(() => import('./pages/BlogPost'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Forum = lazy(() => import('./pages/Forum'));
+const ConsultaRapida = lazy(() => import('./pages/ConsultaRapida'));
+const DerechoPenal = lazy(() => import('./pages/servicios/DerechoPenal'));
+const DerechoCivil = lazy(() => import('./pages/servicios/DerechoCivil'));
+const DerechoTransito = lazy(() => import('./pages/servicios/DerechoTransito'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Appointment = lazy(() => import('./pages/Appointment'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsConditions = lazy(() => import('./pages/TermsConditions'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
-// Página simple de servicios
-const Services = () => (
-  <div className="min-h-screen bg-gray-50 flex flex-col">
-    <header className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-gray-900">Servicios Legales</h1>
-      </div>
-    </header>
-    <main className="flex-grow">
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="border-2 border-gray-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Nuestros Servicios</h2>
-            <ul className="space-y-4">
-              <li className="bg-white p-4 rounded shadow">
-                <h3 className="font-medium">Asesoría Legal Civil</h3>
-                <p className="text-gray-600">Contratos, sucesiones, propiedad, etc.</p>
-              </li>
-              <li className="bg-white p-4 rounded shadow">
-                <h3 className="font-medium">Derecho Penal</h3>
-                <p className="text-gray-600">Defensa penal, recursos, etc.</p>
-              </li>
-              <li className="bg-white p-4 rounded shadow">
-                <h3 className="font-medium">Derecho Laboral</h3>
-                <p className="text-gray-600">Contratos laborales, despidos, etc.</p>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </main>
-    <footer className="bg-white">
-      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-        <p className="text-center text-gray-500">© 2025 Abg. Wilson Alexander Ipiales Guerron</p>
-      </div>
-    </footer>
-  </div>
-);
-
-// Página de error 404
-const NotFound = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div className="max-w-md w-full space-y-8 text-center">
-      <h1 className="text-4xl font-bold text-gray-900">404</h1>
-      <h2 className="text-2xl font-medium text-gray-600">Página no encontrada</h2>
-      <p className="mt-2 text-gray-500">Lo sentimos, la página que buscas no existe.</p>
-      <div className="mt-6">
-        <a href="/" className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md">
-          Volver al inicio
-        </a>
-      </div>
-    </div>
-  </div>
-);
-
-// Aplicación principal
-const App = () => {
+function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/servicios" element={<Services />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <div className="flex flex-col min-h-screen">
+          <MainNavigation />
+          <main className="flex-grow">
+            <Suspense fallback={<Loading />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/servicios" element={<Services />} />
+                <Route path="/servicios/:serviceId" element={<ServiceDetail />} />
+                <Route path="/servicios/penal" element={<DerechoPenal />} />
+                <Route path="/servicios/civil" element={<DerechoCivil />} />
+                <Route path="/servicios/transito" element={<DerechoTransito />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:postId" element={<BlogPost />} />
+                <Route path="/foro" element={<Forum />} />
+                <Route path="/contacto" element={<Contact />} />
+                <Route path="/consulta-rapida" element={<ConsultaRapida />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/registro" element={<Register />} />
+                <Route path="/agendar-cita" element={<Appointment />} />
+                <Route path="/politica-privacidad" element={<PrivacyPolicy />} />
+                <Route path="/terminos-condiciones" element={<TermsConditions />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </main>
+          <MainFooter />
+          <WhatsAppButton />
+        </div>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
-};
+}
 
 export default App;

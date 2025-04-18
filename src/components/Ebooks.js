@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaBook, FaDownload, FaShoppingCart, FaCheck, FaFilePdf } from 'react-icons/fa';
 import { ebookService } from '../services/ebookService';

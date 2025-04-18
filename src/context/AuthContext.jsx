@@ -1,22 +1,36 @@
-import React, { createContext, useState, useEffect } from 'react';
-// Importar el mock local en lugar de @supabase/supabase-js para evitar errores de carga
-import { createClient } from '../mock/supabase';
+import { jsx as _jsx } from "react/jsx-runtime";
+import { createContext, useState, useEffect, useContext } from 'react';
+import { supabase } from '../config/supabase';
 import { toast } from 'react-toastify';
+
 const AuthContext = createContext({});
+
+// Hook personalizado para acceder al contexto de autenticación
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+    }
+    return context;
+};
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+
     useEffect(() => {
-        const supabase = createClient();
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user ?? null);
             setLoading(false);
         });
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null);
         });
+
         return () => subscription.unsubscribe();
     }, []);
+
     const login = async (credentials) => {
         try {
             const { data, error } = await supabase.auth.signInWithPassword(credentials);
@@ -30,6 +44,7 @@ export const AuthProvider = ({ children }) => {
             return { success: false, error };
         }
     };
+
     const logout = async () => {
         try {
             await supabase.auth.signOut();
@@ -39,7 +54,6 @@ export const AuthProvider = ({ children }) => {
             console.error('Error during logout:', error);
         }
     };
-    return (<AuthContext.Provider value={{ user, login, logout, loading }}>
-      {!loading && children}
-    </AuthContext.Provider>);
+
+    return (_jsx(AuthContext.Provider, { value: { user, login, logout, loading }, children: !loading && children }));
 };

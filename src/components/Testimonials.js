@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { FaStar, FaQuoteLeft, FaQuoteRight, FaArrowLeft, FaArrowRight, FaUserPlus } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 export default function Testimonials() {

@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+
 import { FaArrowLeft, FaReply, FaThumbsUp, FaUser, FaTrash, FaEdit } from 'react-icons/fa';
 import supabase, { fetchData, insertData, getCurrentUser, updateData, deleteData } from '../../services/supabase';
 import { formatDistanceToNow } from 'date-fns';

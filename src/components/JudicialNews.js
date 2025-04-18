@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+
 export default function JudicialNews() {
     const [activeCategory, setActiveCategory] = useState('Todos');
     const categories = ['Todos', 'Nacional', 'Local', 'Constitucional', 'Penal', 'Civil'];

@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+
 import { useAuth } from '../context/AuthContext';
 import { affiliateService } from '../services/affiliateService';
 import { ebookService } from '../services/ebookService';

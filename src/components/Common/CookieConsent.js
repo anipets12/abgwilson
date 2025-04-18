@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { FaCookieBite, FaTimes } from 'react-icons/fa';
 const CookieConsent = () => {
     const [showConsent, setShowConsent] = useState(false);

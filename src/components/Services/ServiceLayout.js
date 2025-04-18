@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React from 'react';
-import { motion } from 'framer-motion';
+
 import { Link } from 'react-router-dom';
 import { FaWhatsapp, FaCalendarAlt, FaArrowRight, FaClock, FaCheck, FaStar, FaQuoteLeft } from 'react-icons/fa';
 const ServiceLayout = ({ title, icon, description, services, successCases, whatsappText, specialties }) => {

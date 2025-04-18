@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+
 import { dataService } from '../services/apiService';
 import { FaSearch, FaSpinner, FaExclamationTriangle, FaFileAlt } from 'react-icons/fa';
 const ProcessSearch = () => {

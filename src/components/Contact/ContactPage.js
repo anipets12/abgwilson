@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+
 import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaWhatsapp, FaClock, FaGavel } from 'react-icons/fa';
 import AppointmentCalendar from '../Appointment/AppointmentCalendar';
 import Newsletter from '../Newsletter/Newsletter';

@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { dataService } from '../services/apiService';
 import { FaPaperPlane, FaTimes, FaComments, FaUser, FaRobot, FaSpinner } from 'react-icons/fa';
 const Chat = () => {

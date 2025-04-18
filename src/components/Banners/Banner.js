@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+
 import { FaArrowRight } from 'react-icons/fa';
 const Banner = ({ title, description, image, link, buttonText = 'Ver Más', type = 'primary', countdown = null, discount = null }) => {
     // Configuraciones para diferentes tipos de banners
