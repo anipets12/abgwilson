@@ -50,8 +50,6 @@
   <script type="module" src="/src/main.jsx"></script>
   <!-- Fix para error 1042 -->
   <script>window.addEventListener("error", function(e) { console.error("Capturado:", e.message); });</script>
-  <!-- Fix para error 1042 -->
-  <script>window.addEventListener("error", function(e) { console.error("Capturado:", e.message); });</script>
   <!-- Script para diagnóstico y recuperación ante errores -->
   <script>
     // Verificar que el contenedor root tenga contenido

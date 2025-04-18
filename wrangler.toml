@@ -1,9 +1,13 @@
 name = "abogado-wilson-website"
-main = "src/worker-basic.js"
+main = "src/worker-final.js"
 compatibility_date = "2023-11-21"
+compatibility_flags = ["nodejs_compat"]
 
 [site]
 bucket = "./dist"
+
+[env.production]
+workers_dev = true
 
 [build]
 command = "npm run build"
