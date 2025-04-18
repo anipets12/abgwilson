@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaCalendarCheck, FaClock, FaUser, FaEnvelope, FaPhone, FaLegalpad, FaDownload } from 'react-icons/fa';
+import { FaCalendarCheck, FaClock, FaUser, FaEnvelope, FaPhone, FaFileAlt, FaDownload } from 'react-icons/fa';
 
 /**
  * Componente de confirmación de cita programada
@@ -65,7 +65,7 @@ const AppointmentConfirmation = ({ appointment, onNewAppointment }) => {
           
           <div className="flex items-start">
             <div className="flex-shrink-0">
-              <FaLegalpad className="h-5 w-5 text-primary-600 mt-0.5" />
+              <FaFileAlt className="h-5 w-5 text-primary-600 mt-0.5" />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-900">Tipo de consulta</p>
