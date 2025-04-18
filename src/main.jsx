@@ -8,6 +8,8 @@ import { initializeAnalytics } from './utils/seo';
 import App from './App';
 import './index.css';
 import ErrorBoundary from './components/ErrorBoundary';
+
+// Configuración de React Query
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -16,24 +18,48 @@ const queryClient = new QueryClient({
         },
     },
 });
+
+// Inicializar analíticas
 initializeAnalytics();
-document.addEventListener('DOMContentLoaded', () => {
+
+// Función para renderizar la aplicación
+function renderApp() {
     const rootElement = document.getElementById('root');
-    if (!rootElement)
-        throw new Error('Root element not found');
-    ReactDOM.createRoot(rootElement).render(<React.StrictMode>
-      <ErrorBoundary>
-        <HelmetProvider>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <BrowserRouter>
-                <Suspense fallback={<div>Loading...</div>}>
-                  <App />
-                </Suspense>
-              </BrowserRouter>
-            </AuthProvider>
-          </QueryClientProvider>
-        </HelmetProvider>
-      </ErrorBoundary>
-    </React.StrictMode>);
-});
+    
+    if (!rootElement) {
+        console.error('Error: Elemento root no encontrado');
+        return;
+    }
+    
+    try {
+        // Crear root de React y renderizar la aplicación
+        ReactDOM.createRoot(rootElement).render(
+            <React.StrictMode>
+                <ErrorBoundary>
+                    <HelmetProvider>
+                        <QueryClientProvider client={queryClient}>
+                            <AuthProvider>
+                                <BrowserRouter>
+                                    <Suspense fallback={<div>Loading...</div>}>
+                                        <App />
+                                    </Suspense>
+                                </BrowserRouter>
+                            </AuthProvider>
+                        </QueryClientProvider>
+                    </HelmetProvider>
+                </ErrorBoundary>
+            </React.StrictMode>
+        );
+        
+        console.log('React inicializado correctamente');
+    } catch (error) {
+        console.error('Error al renderizar React:', error);
+    }
+}
+
+// Inicialización segura que funciona en todos los entornos, incluyendo Cloudflare Workers
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderApp);
+} else {
+    renderApp();
+}
