@@ -1,45 +1,14 @@
 name = "abogado-wilson-website"
-main = "src/worker-final.js"
+main = "src/solucion-final.js"
 compatibility_date = "2023-11-21"
 compatibility_flags = ["nodejs_compat"]
 
-[site]
-bucket = "./dist"
-
-[env.production]
+# Configuración para formato ES Module - obligatorio para D1
+type = "javascript"
 workers_dev = true
 
 [build]
 command = "npm run build"
 
-[dev]
-port = 3000
-local_protocol = "http"
-
-[vars]
-ENVIRONMENT = "production"
-CORS_ORIGIN = "*"
-SUPABASE_URL = "https://phzldiaohelbyobhjrnc.supabase.co"
-SUPABASE_KEY = "sbp_db5898ecc094d37ec87562399efe3833e63ab20f"
-JWT_SECRET = "abogadowilsonsecretkeyforsecuritytokens2025"
-TURSO_DATABASE_URL = "libsql://abogadowilson-abogadowilson.turso.io"
-TURSO_AUTH_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicm8iLCJnaWQiOiJiOTJkODlhMi0wNWQ4LTQ0YjUtYWE4OS1iMTc5MzU1YzIyMmIiLCJpYXQiOjE3NDI3ODAxNzMsInJpZCI6IjAzNjkwMTA4LWEyOGQtNDk3ZC1iNzMyLTA5YzhiYWE4OTlhOSJ9.X2ZZbus9HbjQeGvnCRSx3y13U2MsriMu3dzx96eimj7yaNVKKgPWjCsnGDcSxgOoH5fENalLAhQsAjMNwOgkAg"
-OPENAI_API_KEY = "sk-7fdd8b742d864aafbe71c65fb111d16d"
-PAYPAL_CLIENT_ID = "ASb74YkLGzfmTfWqZdm4QGTy5PQeEkG1pOxeZ1q0zMLlw87CAZdHcHUfmcylF2EIGtfvbQ_Q4mnOCLJp"
-PAYPAL_CLIENT_SECRET = "EMmC0PijXcBCGh54VGxcYfUJB4tGi4jRqkr1JpvHu_qK5NE4q1xLcCEeAUXqrZsGx8rnb0qP7QdQXRZV"
-MISTRAL_API_KEY = "m4aWSoEP2HC7XHr9f70NDGwg9qlJMMqR"
-NOTION_API_KEY = "ntn_R407761822221KGTOQZ5t9GAeWBScapIokr22BNXyS0gr3"
-DATABASE_URL = "prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiMTRhNDU5ZTgtNjYxOC00ZGNmLTk1MWItYzAxMjNhNDFkMGE3IiwidGVuYW50X2lkIjoiY2IxYzRhMjEwMGZjYzA3YjQ4ZmI3MWY5Mzc2ZGFiMzhkNmYxMDBmYTY0NmVhYTY4NmVhYjRmYjQwOTgwYjFjOSIsImludGVybmFsX3NlY3JldCI6IjllOTVjNDRjLWEzNzItNDAwYi05ODY5LTk3OTkzMjBmYjYxMSJ9.RAhNmhcUfJpMRWb296WK1bZL6oXTg3Rt1kXfeSs_SyE"
-
-# Corrección del formato para KV Namespaces
-[[kv_namespaces]]
-binding = "ASSETS"
-id = "d977cf29acc749ba8aeabbcb2d395cb3"
-
-# Corrección del formato para D1 Databases
-[[d1_databases]]
-binding = "DB"
-database_id = "f00d15a2-6069-4f19-a8eb-6f2217af2176"
-
-[triggers]
-crons = ["0 0 * * *"] # Daily maintenance
+[site]
+bucket = "./dist"
