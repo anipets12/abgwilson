@@ -1,27 +1,26 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react({
-      // Incluye archivos .js - por defecto es solo .jsx
-      include: "**/*.{jsx,js}",
-    })
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
-    }
+      '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@pages': path.resolve(__dirname, './src/pages'),
+      '@context': path.resolve(__dirname, './src/context'),
+      '@utils': path.resolve(__dirname, './src/utils'),
+      '@hooks': path.resolve(__dirname, './src/hooks'),
+      '@assets': path.resolve(__dirname, './src/assets')
+    },
   },
   build: {
     outDir: 'dist',
-    rollupOptions: {
-      output: {
-        manualChunks: undefined,
-        inlineDynamicImports: true
-      }
-    }
+    sourcemap: true,
+  },
+  server: {
+    port: 3000,
   }
-})
+});

@@ -9,12 +9,26 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^1.7.17",
+    "@heroicons/react": "^2.0.18",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.4.0",
-    "react-icons": "^4.12.0"
+    "react-icons": "^4.12.0",
+    "framer-motion": "^10.16.4",
+    "react-hook-form": "^7.43.9",
+    "react-datepicker": "^4.16.0",
+    "react-toastify": "^9.1.3",
+    "react-slick": "^0.29.0",
+    "slick-carousel": "^1.8.1",
+    "@supabase/supabase-js": "^2.38.0",
+    "date-fns": "^2.30.0",
+    "react-countup": "^6.4.2",
+    "react-intersection-observer": "^9.5.2"
   },
   "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",

@@ -1,313 +1,261 @@
+/**
+ * Servicio de API para consultas a servicios externos
+ * @module apiService
+ */
 
-
-// Determinar la URL base según el entorno
-const getBaseUrl = () => {
-  // En producción con Cloudflare
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    // URL relativa para Cloudflare - no se necesita especificar dominio completo
-    return '';
-  }
-  // En desarrollo local
-  return 'http://localhost:8787';
-};
-
-// Crear instancia de axios con configuración base
-const api = axios.create({
-  baseURL: `${getBaseUrl()}/api`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  // Aumentar timeout para dar más tiempo a Cloudflare Workers
-  timeout: 15000,
-  withCredentials: false
-});
-
-// Función para manejar errores de red de manera uniforme
-const handleNetworkError = (error) => {
-  // Verificar conexión a internet
-  if (!navigator.onLine) {
-    return {
-      error: {
-        message: 'No hay conexión a internet. Por favor, verifique su conexión.',
-        code: 'NETWORK_ERROR',
-        severity: 'error'
-      }
-    };
-  }
-
-  // Manejar errores de autenticación
-  if (error.response?.status === 401) {
-    const currentPath = window.location.pathname;
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    
-    // Guardar la ruta actual para redireccionar después del login
-    if (currentPath !== '/login') {
-      localStorage.setItem('redirectAfterLogin', currentPath);
-    }
-    
-    window.location.href = '/login?session=expired';
-    return {
-      error: {
-        message: 'Su sesión ha expirado. Por favor, inicie sesión nuevamente.',
-        code: 'SESSION_EXPIRED',
-        severity: 'warning'
-      }
-    };
-  }
-
-  // Manejar errores de permisos
-  if (error.response?.status === 403) {
-    return {
-      error: {
-        message: 'No tiene permisos para realizar esta acción.',
-        code: 'FORBIDDEN',
-        severity: 'error'
-      }
-    };
-  }
-
-  // Manejar errores de validación
-  if (error.response?.status === 422) {
-    return {
-      error: {
-        message: 'Datos inválidos. Por favor, verifique la información.',
-        code: 'VALIDATION_ERROR',
-        details: error.response.data.errors,
-        severity: 'warning'
-      }
-    };
-  }
-
-  // Error general del servidor
-  return {
-    error: {
-      message: error.response?.data?.message || 'Error del servidor. Por favor, intente nuevamente.',
-      code: error.response?.status || 'SERVER_ERROR',
-      severity: 'error',
-      details: error.response?.data?.details || null
-    }
-  };
-};
-
-// Interceptor para agregar el token de autenticación a las solicitudes
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Interceptor para manejar respuestas y errores
-api.interceptors.response.use(
-  (response) => {
-    return { data: response.data, error: null };
-  },
-  (error) => {
-    // Manejo mejorado de errores
-    const errorResponse = {
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Error de servidor',
-        code: error.response?.status || 500,
-        details: error.response?.data?.details || null
-      }
-    };
-
-    // Manejar errores específicos
-    if (error.response?.status === 401) {
-      localStorage.removeItem('authToken');
-      window.location.href = '/login?session=expired';
-    }
-
-    if (error.response?.status === 403) {
-      window.location.href = '/acceso-denegado';
-    }
-
-    if (!navigator.onLine) {
-      errorResponse.error.message = 'Error de conexión. Por favor, verifica tu internet.';
-    }
-
-    return Promise.resolve(errorResponse);
-  }
-);
-
-// Servicio de autenticación
-export const authService = {
-  // Registrar un nuevo usuario
-  async register(userData) {
-    try {
-      const response = await api.post('/auth/register', userData);
-      if (response.data?.token) {
-        localStorage.setItem('authToken', response.data.token);
-      }
-      return response;
-    } catch (error) {
-      console.error('Error en registro:', error);
-      return handleNetworkError(error);
-    }
-  },
+/**
+ * Busca procesos judiciales según los criterios proporcionados
+ * @param {string} type - Tipo de búsqueda (número, actor, demandado, judicatura)
+ * @param {string} value - Valor de búsqueda
+ * @param {string} province - Provincia (opcional)
+ * @returns {Promise<Array>} Resultados de la búsqueda
+ */
+export const searchJudicialProcess = async (type, value, province = 'IMBABURA') => {
+  // En una implementación real, aquí se haría una llamada a la API de la Función Judicial
+  // Por ahora, simulamos una respuesta con datos de ejemplo
   
-  // Iniciar sesión
-  async login(email, password) {
-    try {
-      const response = await api.post('/auth/login', { email, password });
-      if (response.data?.token) {
-        localStorage.setItem('authToken', response.data.token);
-      }
-      return response;
-    } catch (error) {
-      console.error('Error en login:', error);
-      return handleNetworkError(error);
-    }
-  },
+  await new Promise(resolve => setTimeout(resolve, 1500)); // Simular tiempo de respuesta
   
-  // Cerrar sesión
-  async signOut() {
-    try {
-      localStorage.removeItem('authToken');
-      return { success: true };
-    } catch (error) {
-      return handleNetworkError(error);
-    }
-  },
+  // Datos de ejemplo según el tipo de búsqueda
+  let results = [];
   
-  // Obtener usuario actual
-  async getCurrentUser() {
-    try {
-      if (!localStorage.getItem('authToken')) {
-        return { user: null, error: null };
-      }
-      return await api.get('/auth/user');
-    } catch (error) {
-      console.error('Error al obtener usuario actual:', error);
-      return { user: null, error: handleNetworkError(error).error };
-    }
-  },
-  
-  // Solicitar cambio de contraseña
-  async resetPasswordForEmail(email) {
-    try {
-      return await api.post('/auth/reset-password', { email });
-    } catch (error) {
-      console.error('Error al solicitar cambio de contraseña:', error);
-      return handleNetworkError(error);
-    }
-  },
-  
-  // Actualizar contraseña
-  async updatePassword(newPassword, token) {
-    try {
-      return await api.post('/auth/update-password', { 
-        password: newPassword,
-        token
-      });
-    } catch (error) {
-      console.error('Error al actualizar contraseña:', error);
-      return handleNetworkError(error);
-    }
-  }
-};
-
-// Servicio para operaciones CRUD
-export const dataService = {
-  // Obtener todos los registros
-  async getAll(resource, params = {}) {
-    try {
-      const queryParams = new URLSearchParams();
-      
-      // Agregar parámetros si existen
-      if (params) {
-        Object.keys(params).forEach(key => {
-          queryParams.append(key, params[key]);
-        });
-      }
-      
-      const queryString = queryParams.toString();
-      const url = `/data/${resource}${queryString ? `?${queryString}` : ''}`;
-      
-      return await api.get(url);
-    } catch (error) {
-      console.error(`Error al obtener ${resource}:`, error);
-      return handleNetworkError(error);
-    }
-  },
-  
-  // Obtener un registro por ID
-  async getById(resource, id) {
-    try {
-      return await api.get(`/data/${resource}/${id}`);
-    } catch (error) {
-      console.error(`Error al obtener ${resource} con ID ${id}:`, error);
-      return handleNetworkError(error);
-    }
-  },
-  
-  // Crear un nuevo registro
-  async create(resource, data) {
-    try {
-      return await api.post(`/data/${resource}`, data);
-    } catch (error) {
-      console.error(`Error al crear ${resource}:`, error);
-      return handleNetworkError(error);
-    }
-  },
-  
-  // Actualizar un registro
-  async update(resource, id, data) {
-    try {
-      return await api.put(`/data/${resource}/${id}`, data);
-    } catch (error) {
-      console.error(`Error al actualizar ${resource} con ID ${id}:`, error);
-      return handleNetworkError(error);
-    }
-  },
-  
-  // Eliminar un registro
-  async remove(resource, id) {
-    try {
-      return await api.delete(`/data/${resource}/${id}`);
-    } catch (error) {
-      console.error(`Error al eliminar ${resource} con ID ${id}:`, error);
-      return handleNetworkError(error);
-    }
-  },
-  
-  // Búsqueda personalizada
-  async search(resource, params = {}) {
-    try {
-      return await api.post(`/data/${resource}/search`, params);
-    } catch (error) {
-      console.error(`Error al buscar en ${resource}:`, error);
-      return handleNetworkError(error);
-    }
-  },
-  
-  // Método especial para manejar archivos
-  async uploadFile(file, resourceType) {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('resourceType', resourceType);
-      
-      return await axios.post(`${getBaseUrl()}/api/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+  switch (type) {
+    case 'numero':
+      results = [
+        {
+          id: value,
+          numero: value,
+          actor: 'PEREZ MARTINEZ JUAN CARLOS',
+          demandado: 'RODRIGUEZ SUAREZ MARIA ELENA',
+          tipo: 'CIVIL - ORDINARIO',
+          estado: 'EN TRÁMITE',
+          fecha: '2023-08-15',
+          judicatura: 'UNIDAD JUDICIAL CIVIL CON SEDE EN EL CANTÓN IBARRA',
+          acciones: ['Ver detalles', 'Descargar']
         }
-      });
-    } catch (error) {
-      console.error('Error al subir archivo:', error);
-      return handleNetworkError(error);
-    }
+      ];
+      break;
+      
+    case 'actor':
+      results = [
+        {
+          id: '10201-2023-00123',
+          numero: '10201-2023-00123',
+          actor: `${value.toUpperCase()}`,
+          demandado: 'CONSTRUCTORA XYZ S.A.',
+          tipo: 'CIVIL - ORDINARIO',
+          estado: 'EN TRÁMITE',
+          fecha: '2023-09-20',
+          judicatura: 'UNIDAD JUDICIAL CIVIL CON SEDE EN EL CANTÓN IBARRA',
+          acciones: ['Ver detalles', 'Descargar']
+        },
+        {
+          id: '10201-2022-01234',
+          numero: '10201-2022-01234',
+          actor: `${value.toUpperCase()}`,
+          demandado: 'BANCO ABC',
+          tipo: 'EJECUTIVO',
+          estado: 'SENTENCIA',
+          fecha: '2022-11-05',
+          judicatura: 'UNIDAD JUDICIAL CIVIL CON SEDE EN EL CANTÓN IBARRA',
+          acciones: ['Ver detalles', 'Descargar']
+        }
+      ];
+      break;
+      
+    case 'demandado':
+      results = [
+        {
+          id: '10201-2023-00456',
+          numero: '10201-2023-00456',
+          actor: 'COOPERATIVA DE AHORRO Y CRÉDITO XYZ',
+          demandado: `${value.toUpperCase()}`,
+          tipo: 'EJECUTIVO',
+          estado: 'EN TRÁMITE',
+          fecha: '2023-07-12',
+          judicatura: 'UNIDAD JUDICIAL CIVIL CON SEDE EN EL CANTÓN IBARRA',
+          acciones: ['Ver detalles', 'Descargar']
+        }
+      ];
+      break;
+      
+    case 'judicatura':
+      results = [
+        {
+          id: '10201-2023-00789',
+          numero: '10201-2023-00789',
+          actor: 'MINISTERIO PÚBLICO',
+          demandado: 'GÓMEZ LÓPEZ CARLOS',
+          tipo: 'PENAL - ORDINARIO',
+          estado: 'EN TRÁMITE',
+          fecha: '2023-10-01',
+          judicatura: province.toUpperCase(),
+          acciones: ['Ver detalles', 'Descargar']
+        },
+        {
+          id: '10201-2023-00790',
+          numero: '10201-2023-00790',
+          actor: 'FISCALÍA GENERAL DEL ESTADO',
+          demandado: 'TORRES RUIZ FERNANDO',
+          tipo: 'PENAL - ORDINARIO',
+          estado: 'AUDIENCIA',
+          fecha: '2023-10-05',
+          judicatura: province.toUpperCase(),
+          acciones: ['Ver detalles', 'Descargar']
+        },
+        {
+          id: '10201-2023-00791',
+          numero: '10201-2023-00791',
+          actor: 'DEFENSORÍA DEL PUEBLO',
+          demandado: 'MUNICIPIO DE IBARRA',
+          tipo: 'CONSTITUCIONAL',
+          estado: 'EN TRÁMITE',
+          fecha: '2023-09-28',
+          judicatura: province.toUpperCase(),
+          acciones: ['Ver detalles', 'Descargar']
+        }
+      ];
+      break;
+      
+    default:
+      results = [];
   }
+  
+  return results;
 };
 
-// Exportar la instancia de axios para uso directo si es necesario
-export default api;
+/**
+ * Busca infracciones de tránsito por placa o licencia
+ * @param {string} type - Tipo de búsqueda (placa, licencia)
+ * @param {string} value - Valor de búsqueda
+ * @returns {Promise<Array>} Resultados de la búsqueda
+ */
+export const searchTrafficInfractions = async (type, value) => {
+  // Simulación de búsqueda de infracciones de tránsito
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  // Datos de ejemplo según el tipo de búsqueda
+  let results = [];
+  
+  switch (type) {
+    case 'placa':
+      results = [
+        {
+          id: '1234567',
+          fecha: '2023-06-10',
+          lugar: 'AV. MARIANO ACOSTA Y JAIME RIVADENEIRA',
+          infraccion: 'EXCESO DE VELOCIDAD',
+          valor: '$80.00',
+          estado: 'NO PAGADA',
+          placa: value.toUpperCase()
+        },
+        {
+          id: '1234568',
+          fecha: '2023-02-15',
+          lugar: 'PANAMERICANA NORTE KM 5',
+          infraccion: 'ESTACIONAMIENTO PROHIBIDO',
+          valor: '$30.00',
+          estado: 'PAGADA',
+          placa: value.toUpperCase()
+        }
+      ];
+      break;
+      
+    case 'licencia':
+      results = [
+        {
+          id: '2345678',
+          fecha: '2023-05-20',
+          lugar: 'CALLE BOLIVAR Y FLORES',
+          infraccion: 'NO RESPETAR SEÑALES DE TRÁNSITO',
+          valor: '$50.00',
+          estado: 'NO PAGADA',
+          licencia: value
+        }
+      ];
+      break;
+      
+    default:
+      results = [];
+  }
+  
+  return results;
+};
+
+/**
+ * Busca información civil como juicios, deudas, etc.
+ * @param {string} type - Tipo de búsqueda (cedula, ruc, nombre)
+ * @param {string} value - Valor de búsqueda
+ * @returns {Promise<Array>} Resultados de la búsqueda
+ */
+export const searchCivilInfo = async (type, value) => {
+  // Simulación de búsqueda de información civil
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  // Datos de ejemplo según el tipo de búsqueda
+  let results = [];
+  
+  switch (type) {
+    case 'cedula':
+      results = [
+        {
+          id: '3456789',
+          tipo: 'JUICIO DE ALIMENTOS',
+          demandante: 'MARÍA JOSEFINA PÉREZ',
+          demandado: `TITULAR DE CÉDULA ${value}`,
+          juzgado: 'UNIDAD JUDICIAL DE FAMILIA',
+          estado: 'VIGENTE',
+          valor: '$250.00 MENSUALES'
+        }
+      ];
+      break;
+      
+    case 'ruc':
+      results = [
+        {
+          id: '4567890',
+          tipo: 'JUICIO MERCANTIL',
+          demandante: 'PROVEEDORES ASOCIADOS S.A.',
+          demandado: `EMPRESA CON RUC ${value}`,
+          juzgado: 'TRIBUNAL DE LO MERCANTIL',
+          estado: 'EN TRÁMITE',
+          valor: '$12,500.00'
+        },
+        {
+          id: '4567891',
+          tipo: 'COACTIVA SRI',
+          demandante: 'SERVICIO DE RENTAS INTERNAS',
+          demandado: `EMPRESA CON RUC ${value}`,
+          juzgado: 'DEPARTAMENTO DE COBRANZAS SRI',
+          estado: 'NOTIFICADO',
+          valor: '$8,750.00'
+        }
+      ];
+      break;
+      
+    case 'nombre':
+      results = [
+        {
+          id: '5678901',
+          tipo: 'JUICIO LABORAL',
+          demandante: value.toUpperCase(),
+          demandado: 'INDUSTRIAS ABC',
+          juzgado: 'UNIDAD JUDICIAL DE TRABAJO',
+          estado: 'SENTENCIA FAVORABLE',
+          valor: '$15,000.00 INDEMNIZACIÓN'
+        }
+      ];
+      break;
+      
+    default:
+      results = [];
+  }
+  
+  return results;
+};
+
+export default {
+  searchJudicialProcess,
+  searchTrafficInfractions,
+  searchCivilInfo
+};

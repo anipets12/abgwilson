@@ -1,39 +1,42 @@
 import React from 'react';
-import { Route, Routes } from 'react-router-dom';
-import { lazy } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
-// Importación de componentes con lazy loading para mejor rendimiento
-const Home = lazy(() => import('./components/Hero.jsx'));
-const Services = lazy(() => import('./components/Services'));
-const Contact = lazy(() => import('./components/Contact/ContactPage'));
-const Login = lazy(() => import('./components/Auth/Login'));
-const Register = lazy(() => import('./components/Auth/Register'));
-const Dashboard = lazy(() => import('./components/Dashboard/DashboardPage'));
-const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
-const TermsConditions = lazy(() => import('./components/TerminosCondiciones'));
-const ConsultationHub = lazy(() => import('./components/Consultation/ConsultationHub'));
-const PaymentForm = lazy(() => import('./components/Payment/PaymentForm'));
-const ThankYouPage = lazy(() => import('./components/Payment/ThankYouPage'));
-const NotFound = lazy(() => import('./components/ErrorBoundary'));
+// Importar páginas principales
+import HomePage from './pages/Home';
+import ServicesPage from './pages/Services';
+import BlogPage from './pages/Blog';
+import ForumPage from './pages/Forum';
+import ContactPage from './pages/Contact';
+import NotFoundPage from './pages/NotFound';
 
-// Definición de las rutas de la aplicación
-function AppRoutes() {
+// Componentes de Consultas
+import ProcessSearch from './components/ProcessSearch';
+import ConsultasPenales from './components/ConsultasPenales';
+import ConsultasTransito from './components/ConsultasTransito';
+import ConsultasCiviles from './components/ConsultasCiviles';
+
+const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/servicios" element={<Services />} />
-      <Route path="/contacto" element={<Contact />} />
-      <Route path="/iniciar-sesion" element={<Login />} />
-      <Route path="/registro" element={<Register />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/politica-privacidad" element={<PrivacyPolicy />} />
-      <Route path="/terminos-condiciones" element={<TermsConditions />} />
-      <Route path="/consultas" element={<ConsultationHub />} />
-      <Route path="/pago" element={<PaymentForm />} />
-      <Route path="/gracias" element={<ThankYouPage />} />
-      <Route path="*" element={<NotFound />} />
+      {/* Rutas Públicas */}
+      <Route path="/" element={<HomePage />} />
+      <Route path="/servicios" element={<ServicesPage />} />
+      <Route path="/blog" element={<BlogPage />} />
+      <Route path="/foro" element={<ForumPage />} />
+      <Route path="/contacto" element={<ContactPage />} />
+      
+      {/* Consultas */}
+      <Route path="/consultas">
+        <Route path="procesos-judiciales" element={<ProcessSearch />} />
+        <Route path="procesos-penales" element={<ConsultasPenales />} />
+        <Route path="transito" element={<ConsultasTransito />} />
+        <Route path="civil" element={<ConsultasCiviles />} />
+      </Route>
+      
+      {/* Ruta 404 */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
-}
+};
 
 export default AppRoutes;

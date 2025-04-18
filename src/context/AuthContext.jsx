@@ -1,59 +1,55 @@
-import { jsx as _jsx } from "react/jsx-runtime";
-import { createContext, useState, useEffect, useContext } from 'react';
-import { supabase } from '../config/supabase';
-import { toast } from 'react-toastify';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
-const AuthContext = createContext({});
+const AuthContext = createContext();
 
-// Hook personalizado para acceder al contexto de autenticación
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth debe ser usado dentro de un AuthProvider');
-    }
-    return context;
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            setLoading(false);
-        });
+  useEffect(() => {
+    // Verificar si hay un usuario en localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
+  }, []);
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
+  const login = (userData) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+    return true;
+  };
 
-        return () => subscription.unsubscribe();
-    }, []);
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
+  };
 
-    const login = async (credentials) => {
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword(credentials);
-            if (error)
-                throw error;
-            setUser(data.user);
-            return { success: true };
-        }
-        catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Error de autenticación');
-            return { success: false, error };
-        }
+  const register = async (userData) => {
+    // Aquí iría la lógica para registrar un usuario
+    // Por ahora solo simularemos un registro exitoso
+    const newUser = {
+      id: Date.now().toString(),
+      ...userData,
+      role: 'user'
     };
+    login(newUser);
+    return true;
+  };
 
-    const logout = async () => {
-        try {
-            await supabase.auth.signOut();
-            setUser(null);
-        }
-        catch (error) {
-            console.error('Error during logout:', error);
-        }
-    };
+  const value = {
+    user,
+    loading,
+    login,
+    logout,
+    register,
+    isAuthenticated: !!user
+  };
 
-    return (_jsx(AuthContext.Provider, { value: { user, login, logout, loading }, children: !loading && children }));
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+export default AuthContext;

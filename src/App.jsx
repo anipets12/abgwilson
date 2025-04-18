@@ -1,64 +1,48 @@
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import MainNavigation from './components/Navigation/MainNavigation';
-import MainFooter from './components/Footer/MainFooter';
-import Loading from './components/Loading';
-import WhatsAppButton from './components/Common/WhatsAppButton';
-import ErrorBoundary from './components/ErrorBoundary';
-
-// Carga diferida de componentes
-const Home = lazy(() => import('./pages/Home'));
-const Services = lazy(() => import('./pages/Services'));
-const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
-const Blog = lazy(() => import('./pages/Blog'));
-const BlogPost = lazy(() => import('./pages/BlogPost'));
-const Contact = lazy(() => import('./pages/Contact'));
-const Forum = lazy(() => import('./pages/Forum'));
-const ConsultaRapida = lazy(() => import('./pages/ConsultaRapida'));
-const DerechoPenal = lazy(() => import('./pages/servicios/DerechoPenal'));
-const DerechoCivil = lazy(() => import('./pages/servicios/DerechoCivil'));
-const DerechoTransito = lazy(() => import('./pages/servicios/DerechoTransito'));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const Appointment = lazy(() => import('./pages/Appointment'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const TermsConditions = lazy(() => import('./pages/TermsConditions'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import WhatsAppButton from './components/WhatsAppButton';
+import AppRoutes from './routes';
+import './index.css';
 
 function App() {
-  return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <div className="flex flex-col min-h-screen">
-          <MainNavigation />
-          <main className="flex-grow">
-            <Suspense fallback={<Loading />}>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/servicios" element={<Services />} />
-                <Route path="/servicios/:serviceId" element={<ServiceDetail />} />
-                <Route path="/servicios/penal" element={<DerechoPenal />} />
-                <Route path="/servicios/civil" element={<DerechoCivil />} />
-                <Route path="/servicios/transito" element={<DerechoTransito />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/blog/:postId" element={<BlogPost />} />
-                <Route path="/foro" element={<Forum />} />
-                <Route path="/contacto" element={<Contact />} />
-                <Route path="/consulta-rapida" element={<ConsultaRapida />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/registro" element={<Register />} />
-                <Route path="/agendar-cita" element={<Appointment />} />
-                <Route path="/politica-privacidad" element={<PrivacyPolicy />} />
-                <Route path="/terminos-condiciones" element={<TermsConditions />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </main>
-          <MainFooter />
-          <WhatsAppButton />
+  const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
+
+  // Efecto para manejar el scroll al cambiar de ruta
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  // Simular carga de la aplicación
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
         </div>
-      </BrowserRouter>
-    </ErrorBoundary>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-white">
+      <Header />
+      <main className="flex-grow pt-20">
+        <AppRoutes />
+      </main>
+      <Footer />
+      <WhatsAppButton />
+    </div>
   );
 }
 

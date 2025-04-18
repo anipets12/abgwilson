@@ -1,0 +1,6 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import React from 'react';
+const Certificates = () => {
+    return (_jsxs("div", { className: 'min-h-screen bg-gray-100 p-8', children: [_jsx("h1", { className: 'text-3xl font-bold mb-8', children: "Certificados en L\u00EDnea" }), _jsxs("div", { className: 'bg-white p-6 rounded-lg shadow-md', children: [_jsx("h2", { className: 'text-xl font-semibold mb-4', children: "Generar Certificado" }), _jsxs("form", { className: 'space-y-4', children: [_jsxs("div", { children: [_jsx("label", { className: 'block text-gray-700', children: "Tipo de Certificado" }), _jsxs("select", { className: 'mt-1 block w-full p-2 border border-gray-300 rounded-lg', children: [_jsx("option", { children: "Certificado de Trabajo" }), _jsx("option", { children: "Certificado de Estudios" }), _jsx("option", { children: "Certificado de Residencia" })] })] }), _jsxs("div", { children: [_jsx("label", { className: 'block text-gray-700', children: "Detalles" }), _jsx("textarea", { className: 'mt-1 block w-full p-2 border border-gray-300 rounded-lg', rows: '4' })] }), _jsx("button", { type: 'submit', className: 'px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700', children: "Generar Certificado" })] })] })] }));
+};
+export default Certificates;
