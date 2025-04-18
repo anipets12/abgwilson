@@ -242,7 +242,17 @@ function handlePreflight(request, corsHeaders) {
  * Determina si una ruta es un recurso estático
  */
 function isStaticAsset(pathname) {
-  return pathname.match(/\.(js|css|ico|png|jpg|jpeg|svg|woff|woff2|ttf|eot|json|webp|mp4|webm|gif)$/);
+  return (
+    pathname.endsWith('.js') ||
+    pathname.endsWith('.css') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.woff2') ||
+    pathname.endsWith('.ico') ||
+    pathname.includes('favicon')
+  );
 }
 
 /**
@@ -512,10 +522,51 @@ async function handleApiRequest(request, corsHeaders) {
  */
 async function handleStaticAsset(request, corsHeaders) {
   try {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+    
+    // Manejo especial para favicon.ico
+    if (pathname.includes('favicon.ico')) {
+      // Intentar servir desde la ruta correcta
+      const faviconResponse = await fetch(new URL('/favicon.ico', url.origin));
+      if (faviconResponse.ok) {
+        const newResponse = new Response(faviconResponse.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/x-icon',
+            'Cache-Control': 'public, max-age=604800',
+            ...corsHeaders
+          }
+        });
+        return newResponse;
+      }
+      
+      // Si no se encuentra, devolver una respuesta vacía con 204 para evitar errores
+      return new Response(null, {
+        status: 204, // No Content
+        headers: {
+          'Cache-Control': 'public, max-age=604800',
+          ...corsHeaders
+        }
+      });
+    }
+    
+    // Manejo normal para otros recursos estáticos
     const staticResponse = await fetch(request);
     
     if (!staticResponse.ok) {
-      return staticResponse; // Mantener respuestas de error como 404
+      // Para recursos no encontrados, dar una respuesta más amigable
+      if (staticResponse.status === 404) {
+        console.warn(`Recurso no encontrado: ${pathname}`);
+        return new Response(null, {
+          status: 204, // No Content en lugar de 404 para evitar errores en consola
+          headers: {
+            'Cache-Control': 'no-store',
+            ...corsHeaders
+          }
+        });
+      }
+      return staticResponse; // Mantener otras respuestas de error
     }
     
     const newResponse = new Response(staticResponse.body, staticResponse);
@@ -532,15 +583,23 @@ async function handleStaticAsset(request, corsHeaders) {
   } catch (error) {
     console.error('Error serving static asset:', error);
     
-    // Para errores con activos estáticos, redirigir a un error de recurso general
-    return new Response(JSON.stringify({
-      error: 'Failed to load resource',
-      path: new URL(request.url).pathname
-    }), {
-      status: 500,
+    // Para errores con favicon u otros recursos no críticos, devolver 204
+    const url = new URL(request.url);
+    if (url.pathname.includes('favicon') || url.pathname.endsWith('.ico')) {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Cache-Control': 'no-store',
+          ...corsHeaders
+        }
+      });
+    }
+    
+    // Para otros errores con activos estáticos, respuesta más amigable
+    return new Response(null, {
+      status: 204, // No Content
       headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': cacheControlHeaders.error,
+        'Cache-Control': 'no-store',
         ...corsHeaders
       }
     });
@@ -584,6 +643,26 @@ async function handleSpaRouting(url, env, ctx, corsHeaders) {
               // Keep only the last 10 errors
               if (recentErrors.length > 10) recentErrors.shift();
               localStorage.setItem('abogadoWilson_recentErrors', JSON.stringify(recentErrors));
+              
+              // Automatic recovery for favicon errors
+              if (e.message.includes('favicon') || e.target && e.target.nodeName === 'LINK' && e.target.rel === 'icon') {
+                console.log('[${APP_NAME}] Favicon error detected, suppressing...');
+                // Remove any favicon links to prevent further errors
+                document.querySelectorAll('link[rel="icon"]').forEach(el => el.remove());
+                document.querySelectorAll('link[rel="shortcut icon"]').forEach(el => el.remove());
+                // Create new favicon element pointing to data URL
+                const link = document.createElement('link');
+                link.rel = 'icon';
+                link.href = 'data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFVVAANNTgA2TU0Ad01NAJJNTQCnTU0Ap01NAJJNTQBoVlYAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATk4AUE1NAMdNTQD9TU0A/01NAP9NTQD/TU0A/01NAP9NTQD9TU0AuU1NADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABNTQC2TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAKgAAAAAAAAAAAAAAAAAAAAATU0AKE1NAPtNTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAPFRUQAeAAAAAAAAAABNTQCDTU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAGwAAAAAAAAAAE1NAItNTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0AdAAAAAAAAAAATU0AMk1NAPtNTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAPNOTgAmAAAAAAAAAAAAAAACTU0AuE1NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0A/01NAP9NTQD/TU0AqgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE1NAFNNTQDcTU0A/k1NAP9NTQD/TU0A/01NAP9NTQD+TU0Az01NAEQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABVVQADTU0AN01NAHdNTQCSTU0AqE1NAJNNTQBpTk4AEwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+                link.type = 'image/x-icon';
+                document.head.appendChild(link);
+                return;
+              }
+              
+              // Redirecting to recovery page for serious errors
+              if (recentErrors.length > 3) {
+                window.location.href = '/?recovered=true&from=1042&t=' + Date.now();
+              }
             } catch (err) {}
           }
         });
