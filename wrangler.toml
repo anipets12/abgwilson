@@ -18,9 +18,3 @@ bucket = "./dist"
 [build]
 command = "npm run build"
 watch_dir = "src"
-
-# Configuración de rutas SPA
-[[routes]]
-pattern = "/*"
-script = "src/worker-super.js"
-handler = "fetch"
