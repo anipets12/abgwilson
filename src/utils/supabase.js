@@ -1,13 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Crear una única instancia del cliente Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://tu-proyecto.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || '';
+// Usar valores de configuración directamente si no están disponibles en env
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://phzldiaohelbyobhjrnc.supabase.co';
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || 'sbp_db5898ecc094d37ec87562399efe3833e63ab20f';
 
-if (!supabaseKey) {
-  console.warn('API Key de Supabase no encontrada. Algunas funcionalidades estarán limitadas.');
+if (!import.meta.env.VITE_SUPABASE_KEY) {
+  console.warn('No se encontró VITE_SUPABASE_KEY en variables de entorno, usando valor por defecto.');
 }
 
+// Asegurando que siempre tenemos un valor para createClient
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**

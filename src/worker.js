@@ -1,14 +1,24 @@
 // Archivo optimizado para Cloudflare Workers
 import { createClient } from '@supabase/supabase-js';
 
-// Instancia única de Supabase a nivel global
+// Instancia única de Supabase a nivel global con valores por defecto
 let supabase;
+// Valores por defecto para el servicio
+const DEFAULT_SUPABASE_URL = 'https://phzldiaohelbyobhjrnc.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'sbp_db5898ecc094d37ec87562399efe3833e63ab20f';
 
 export default {
   async fetch(request, env, ctx) {
-    // Asegurarnos de disponer del cliente sólo una vez
+    // Asegurarnos de disponer del cliente sólo una vez, usando valores por defecto si no están en env
     if (!supabase) {
-      supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+      const supabaseUrl = env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+      const supabaseKey = env.SUPABASE_KEY || DEFAULT_SUPABASE_KEY;
+      
+      if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
+        console.warn('Variables de entorno de Supabase no encontradas, usando valores por defecto');
+      }
+      
+      supabase = createClient(supabaseUrl, supabaseKey);
     }
 
     const url = new URL(request.url);
