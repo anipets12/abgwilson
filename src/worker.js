@@ -7,6 +7,10 @@ let supabase;
 const DEFAULT_SUPABASE_URL = 'https://phzldiaohelbyobhjrnc.supabase.co';
 const DEFAULT_SUPABASE_KEY = 'sbp_db5898ecc094d37ec87562399efe3833e63ab20f';
 
+// Configuración de Cloudflare Turnstile
+const TURNSTILE_SITE_KEY = '0x4AAAAAABDkl--Sw4n_bwmU';
+const TURNSTILE_SECRET_KEY = '0x4AAAAAABDkl-wPYTurHAniMDA2wqOJ__k';
+
 export default {
   async fetch(request, env, ctx) {
     // Asegurarnos de disponer del cliente sólo una vez, usando valores por defecto si no están en env
@@ -63,8 +67,69 @@ export default {
         return new Response(JSON.stringify({
           status: 'healthy',
           timestamp: new Date().toISOString(),
-          environment: env.CLOUDFLARE_ENV || 'development'
+          environment: env.CLOUDFLARE_ENV || 'development',
+          turnstile_enabled: true
         }), { headers });
+      }
+      
+      // Endpoint para verificar tokens de Turnstile
+      if (pathname === '/api/verify-turnstile' && request.method === 'POST') {
+        const { token, action } = await request.json();
+        
+        if (!token) {
+          return new Response(JSON.stringify({
+            success: false,
+            message: 'Token de Turnstile es requerido'
+          }), { headers, status: 400 });
+        }
+        
+        try {
+          // Verificar token con Turnstile API
+          const formData = new URLSearchParams();
+          formData.append('secret', env.TURNSTILE_SECRET_KEY || TURNSTILE_SECRET_KEY);
+          formData.append('response', token);
+          formData.append('remoteip', request.headers.get('CF-Connecting-IP'));
+          
+          const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          });
+          
+          const turnstileResult = await turnstileResponse.json();
+          
+          if (turnstileResult.success) {
+            // Si la verificación fue exitosa, registramos la acción
+            if (action === 'contact_form' || action === 'consultation') {
+              // Opcional: registrar el evento en Supabase
+              await supabase.from('security_logs').insert({
+                action: action,
+                token: token.substring(0, 10) + '...',  // Solo guardar una parte del token por seguridad
+                success: true,
+                created_at: new Date().toISOString()
+              }).catch(err => console.warn('Error al registrar verificación Turnstile:', err));
+            }
+            
+            return new Response(JSON.stringify({
+              success: true,
+              verification: turnstileResult
+            }), { headers });
+          } else {
+            return new Response(JSON.stringify({
+              success: false,
+              message: 'Verificación de Turnstile fallida',
+              errors: turnstileResult['error-codes']
+            }), { headers, status: 400 });
+          }
+        } catch (error) {
+          return new Response(JSON.stringify({
+            success: false,
+            message: 'Error al verificar token de Turnstile',
+            error: env.ENABLE_DIAGNOSTICS === 'true' ? error.message : undefined
+          }), { headers, status: 500 });
+        }
       }
 
       // Verificación de autenticación
