@@ -1,21 +1,34 @@
 // Archivo optimizado para Cloudflare Workers
 import { createClient } from '@supabase/supabase-js';
 
-// Configuración de CORS
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-};
+// Instancia única de Supabase a nivel global
+let supabase;
 
 export default {
   async fetch(request, env, ctx) {
-    // Inicializar Supabase con variables de entorno
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
-    
+    // Asegurarnos de disponer del cliente sólo una vez
+    if (!supabase) {
+      supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+    }
+
     const url = new URL(request.url);
     const { pathname } = url;
-    
+
+    // Servir directamente cualquier recurso estático (HTML, JS, imágenes, favicon, etc.)
+    if (!pathname.startsWith('/api/')) {
+      // Si existe binding de assets usamos esa opción, de lo contrario devolvemos 404
+      if (env.ASSETS) {
+        return env.ASSETS.fetch(request);
+      }
+    }
+
+    // A partir de aquí todo lo que sea /api/* recibe cabeceras CORS
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    };
+
     // Manejar CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { 
@@ -31,10 +44,9 @@ export default {
     };
 
     try {
-      // Manejo de favicon para evitar errores 404
-      if (pathname === '/favicon.ico') {
-        return fetch(new URL('/favicon.ico', url.origin));
-      }
+      // ------------------------------------------------------------
+      // RUTAS API
+      // ------------------------------------------------------------
 
       // API para verificar estado
       if (pathname === '/api/status') {
@@ -109,7 +121,7 @@ export default {
         return new Response(JSON.stringify(data), { headers });
       }
 
-      // Si no se encuentra la ruta
+      // Si no se encuentra la ruta dentro de /api
       return new Response(JSON.stringify({
         success: false,
         message: 'Ruta no encontrada'
@@ -117,7 +129,7 @@ export default {
       
     } catch (err) {
       // Log de error (visible en dashboard de Cloudflare)
-      console.error(`Error en Worker: ${err.message}`);
+      console.error(`Error en Worker: ${err.stack || err}`);
       
       // Respuesta de error
       return new Response(JSON.stringify({
