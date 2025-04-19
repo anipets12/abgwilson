@@ -1,6 +1,7 @@
 name = "abogado-wilson-website"
-main = "dist/index.js"
+main = "src/worker.js"
 compatibility_date = "2023-11-21"
+compatibility_flags = ["nodejs_compat"]
 
 [site]
 bucket = "./dist"

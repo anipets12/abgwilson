@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Crear una única instancia del cliente Supabase
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://tu-proyecto.supabase.co';
-const supabaseKey = process.env.REACT_APP_SUPABASE_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://tu-proyecto.supabase.co';
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || '';
 
 if (!supabaseKey) {
   console.warn('API Key de Supabase no encontrada. Algunas funcionalidades estarán limitadas.');
