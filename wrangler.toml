@@ -5,6 +5,9 @@ compatibility_flags = ["nodejs_compat"]
 
 [site]
 bucket = "./dist"
+# Esta configuración es para asegurarse que las rutas SPA funcionen correctamente
+include = ["**/*"]
+
 
 # Nota: El KV namespace se creará manualmente después del primer despliegue exitoso
 # y se agregará la referencia aquí posteriormente

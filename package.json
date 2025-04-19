@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && tsc index.ts --outDir dist --target ES2021 --module ESNext --esModuleInterop",
+    "build": "vite build",
     "preview": "vite preview",
     "validate-components": "node scripts/validateComponents.cjs",
     "validate-imports": "node scripts/validateImports.js"

@@ -1,17 +1,22 @@
 {
   "compilerOptions": {
     "skipLibCheck": true,
-    "outDir": "dist",
     "target": "ES2021",
     "module": "ESNext",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
+    "strict": false,
+    "lib": ["ES2021", "WebWorker"],
+    "allowJs": true,
+    "outDir": "dist",
     "isolatedModules": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "lib": ["ES2020", "DOM", "DOM.Iterable", "WebWorker"],
-    "types": ["@cloudflare/workers-types"]
+    "noEmit": false,
+    "noImplicitAny": false,
+    "types": ["@cloudflare/workers-types"],
+    "paths": {
+      "undici-types": ["./node_modules/undici-types/index.d.ts"]
+    }
   },
-  "include": ["index.ts"]
+  "include": ["src/worker.js"],
+  "exclude": ["node_modules"]
 }

@@ -1,5 +1,6 @@
 // Archivo optimizado para Cloudflare Workers
 import { createClient } from '@supabase/supabase-js';
+import { handleSPARoutes } from './_routes';
 
 // Instancia única de Supabase a nivel global con valores por defecto
 let supabase;
@@ -28,11 +29,34 @@ export default {
     const url = new URL(request.url);
     const { pathname } = url;
 
-    // Servir directamente cualquier recurso estático (HTML, JS, imágenes, favicon, etc.)
+    // Servir recursos estáticos y manejar rutas de SPA
     if (!pathname.startsWith('/api/')) {
-      // Si existe binding de assets usamos esa opción, de lo contrario devolvemos 404
+      // Usa nuestro gestor de rutas SPA para determinar si debemos servir index.html
+      const shouldServeIndexHtml = handleSPARoutes(request, env);
+      
       if (env.ASSETS) {
-        return env.ASSETS.fetch(request);
+        // Crear una nueva petición para el asset
+        let assetRequest = new Request(request.url, request);
+        
+        if (shouldServeIndexHtml) {
+          // Si es una ruta SPA como /login o /register, servir index.html
+          console.log(`Sirviendo index.html para ruta SPA: ${pathname}`);
+          assetRequest = new Request(`${url.origin}/index.html`, request);
+        }
+        
+        return env.ASSETS.fetch(assetRequest);
+      } else {
+        // Si no hay ASSETS binding, intentar fallback para desarrollo local
+        console.warn('No ASSETS binding found, attempting fallback for local development');
+        try {
+          if (shouldServeIndexHtml) {
+            return fetch(new URL('/index.html', request.url));
+          } else {
+            return fetch(request.url);
+          }
+        } catch (err) {
+          console.error('Fallback failed:', err);
+        }
       }
     }
 
