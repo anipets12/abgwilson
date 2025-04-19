@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "target": "ES2021",
+    "module": "ESNext",
+    "esModuleInterop": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "lib": ["ES2020", "DOM", "DOM.Iterable", "WebWorker"],
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["index.ts"]
+}

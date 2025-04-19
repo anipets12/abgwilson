@@ -1,13 +1,13 @@
-import { PrismaClient } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
 
 interface Env {
   SUPABASE_URL: string;
   SUPABASE_KEY: string;
   CORS_ORIGIN: string;
+  ENABLE_DIAGNOSTICS: string;
+  CLOUDFLARE_ENV: string;
 }
 
-const prisma = new PrismaClient();
 let supabase: ReturnType<typeof createClient>;
 
 // Add authentication check middleware
@@ -66,14 +66,15 @@ export default {
       // Add quick consultation endpoint
       if (pathname === '/api/quick-consultation') {
         if (request.method === 'POST') {
-          const data = await request.json();
-          const consultation = await prisma.consultation.create({
-            data: {
-              ...data,
-              status: 'pending'
-            }
-          });
-          return new Response(JSON.stringify(consultation), { headers, status: 201 });
+          const data = await request.json() as Record<string, unknown>;
+          // En vez de usar Prisma, guardamos con Supabase
+          const { data: consultation, error } = await supabase
+            .from('consultations')
+            .insert([{ ...data, status: 'pending', created_at: new Date().toISOString() }])
+            .select();
+            
+          if (error) throw error;
+          return new Response(JSON.stringify(consultation[0]), { headers, status: 201 });
         }
       }
 
@@ -81,7 +82,7 @@ export default {
       if (pathname.startsWith('/api/payments/verify')) {
         // Add PayPal verification logic
         if (request.method === 'POST') {
-          const { paymentId } = await request.json();
+          const { paymentId } = await request.json() as { paymentId: string };
           // Verify with PayPal API
           // Add your PayPal verification logic here
           return new Response(JSON.stringify({ verified: true }), { headers, status: 200 });
@@ -90,26 +91,43 @@ export default {
 
       if (pathname.startsWith('/api/items')) {
         if (request.method === 'GET') {
-          // Obtener todos los items
-          const items = await prisma.item.findMany();
+          // Obtener todos los items usando Supabase en vez de Prisma
+          const { data: items, error } = await supabase
+            .from('items')
+            .select('*');
+            
+          if (error) throw error;
           return new Response(JSON.stringify(items), { headers, status: 200 });
         } else if (request.method === 'POST') {
           // Crear un nuevo item
-          const data = await request.json();
-          const newItem = await prisma.item.create({ data });
-          return new Response(JSON.stringify(newItem), { headers, status: 201 });
+          const data = await request.json() as Record<string, unknown>;
+          const { data: newItem, error } = await supabase
+            .from('items')
+            .insert([data])
+            .select();
+            
+          if (error) throw error;
+          return new Response(JSON.stringify(newItem[0]), { headers, status: 201 });
         } else if (request.method === 'PUT') {
-          // Actualizar un item existente; se espera que el JSON incluya "id"
-          const data = await request.json();
-          const updatedItem = await prisma.item.update({
-            where: { id: data.id },
-            data,
-          });
-          return new Response(JSON.stringify(updatedItem), { headers, status: 200 });
+          // Actualizar un item existente
+          const data = await request.json() as Record<string, unknown> & { id: string };
+          const { data: updatedItem, error } = await supabase
+            .from('items')
+            .update(data)
+            .eq('id', data.id)
+            .select();
+            
+          if (error) throw error;
+          return new Response(JSON.stringify(updatedItem[0]), { headers, status: 200 });
         } else if (request.method === 'DELETE') {
-          // Borrar un item; se espera un objeto JSON con "id"
-          const { id } = await request.json();
-          await prisma.item.delete({ where: { id } });
+          // Borrar un item
+          const { id } = await request.json() as { id: string };
+          const { error } = await supabase
+            .from('items')
+            .delete()
+            .eq('id', id);
+            
+          if (error) throw error;
           return new Response(JSON.stringify({ deleted: true }), { headers, status: 200 });
         }
       }
